@@ -1,0 +1,400 @@
+/* ============================================================
+   無理でしょ — プロトタイプ
+   ★ デザイン方針（design/design-principles.md からの全面的な逸脱・拓男承認済み）
+
+   通常のワークスペース原則（白地・グロー禁止・影禁止）は今回だけ外す。
+   賭けが起きている場であることを見た目で言い切るため、
+   「競馬場・ブックメーカーの電光オッズボード」を軸に、カジノの緑と金を差す。
+
+   - 地：深夜の黒 × カジノテーブルのフェルト緑
+   - 数字：アンバーのLED発光。ここだけが光る主役
+   - やる＝緑 / 無理でしょ＝赤（意味を持つ色分け）
+   - 金の細線と、LEDドットのマトリクスで「掲示板」の質感を作る
+   - 原則から残したもの：角0（掲示板は角が立っている）、8pxスケール、タイポの階層
+   ============================================================ */
+
+:root{
+  /* 地・面 */
+  --night:#0A0A0B;        /* 会場の暗がり */
+  --board:#111214;        /* 掲示板の地 */
+  --felt:#0B3D2E;         /* テーブルのフェルト緑 */
+  --felt-deep:#072720;
+  --felt-line:#14563F;
+
+  /* 線・文字 */
+  --gold:#C9A227;
+  --gold-dim:#6E5A18;
+  --chalk:#EDEAE3;
+  --dust:#8C8778;         /* 補助文字 */
+
+  /* 意味を持つ色 */
+  --amber:#FFB100;        /* オッズのLED */
+  --win:#00C853;          /* やる */
+  --lose:#FF1744;         /* 無理でしょ */
+
+  /* スペース（8pxベース。ここは原則を残す） */
+  --s-1:4px; --s-2:8px; --s-3:16px; --s-4:24px;
+  --s-5:32px; --s-6:48px; --s-7:64px; --s-8:96px;
+
+  --line:1.5px solid var(--gold-dim);
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+
+body{
+  background:var(--night);
+  color:var(--chalk);
+  font-family:"Zen Kaku Gothic New","Inter";
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  /* 会場の照明。中央だけ明るい */
+  background-image:radial-gradient(ellipse 80% 60% at 50% 0%, #1A1A1D 0%, var(--night) 70%);
+  background-attachment:fixed;
+}
+
+.svg-defs{ position:absolute; width:0; height:0; }
+button{ font:inherit; color:inherit; cursor:pointer; }
+
+/* LEDドットのマトリクス。掲示板の面に薄く敷く */
+.led-grid{
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size:4px 4px;
+}
+
+/* ---------- ステージ ---------- */
+.stage{ max-width:1180px; margin:0 auto; padding:var(--s-6) var(--s-4) var(--s-8); }
+
+.stage__head{
+  display:flex; justify-content:space-between; align-items:flex-end; gap:var(--s-4);
+  border-bottom:var(--line); padding-bottom:var(--s-3); margin-bottom:var(--s-6);
+  flex-wrap:wrap;
+}
+/* ネオンサイン。ここは思い切り光らせる */
+.wordmark{
+  font-family:"Inter","Zen Kaku Gothic New";
+  font-size:56px; font-weight:700; line-height:1.1; letter-spacing:-0.02em;
+  margin:0; color:#fff;
+  text-shadow:
+    0 0 4px rgba(255,23,68,.9),
+    0 0 18px rgba(255,23,68,.7),
+    0 0 42px rgba(255,23,68,.45);
+}
+.tagline{ margin:var(--s-2) 0 0; font-size:16px; color:var(--dust); }
+.stamp{
+  font-family:"Inter"; font-size:12px; letter-spacing:0.12em;
+  margin:0; color:var(--gold);
+}
+
+.stage__body{
+  display:grid; grid-template-columns:auto 1fr; gap:var(--s-6);
+  align-items:start;
+}
+
+/* ---------- 端末フレーム ---------- */
+.phone{
+  width:390px; height:780px;
+  border:2px solid var(--gold-dim);
+  background:var(--board);
+  display:flex; flex-direction:column;
+  position:relative; overflow:hidden;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 24px 60px rgba(0,0,0,.7);
+}
+.phone__screen{
+  flex:1; min-height:0; overflow-y:auto; position:relative;
+  background:var(--board);
+}
+
+.view{ display:none; min-height:100%; position:relative; }
+.view.is-on{ display:block; }
+.view__pad{ padding:var(--s-5) var(--s-4); position:relative; z-index:1; }
+.view__center{
+  min-height:calc(780px - 56px - var(--s-8));
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:var(--s-3);
+}
+
+/* ---------- タイポ ---------- */
+.h-2{ font-size:32px; line-height:1.1; letter-spacing:-0.01em; font-weight:700; margin:0 0 var(--s-3); }
+.h-3{ font-size:20px; line-height:1.1; font-weight:700; margin:0; color:var(--gold); }
+.muted{ font-size:14px; color:var(--dust); margin:0 0 var(--s-3); }
+.note{ font-size:12px; color:var(--dust); margin:var(--s-3) 0 0; }
+.step{
+  font-family:"Inter"; font-size:12px; letter-spacing:0.16em;
+  margin:0 0 var(--s-2); color:var(--gold);
+}
+
+/* ---------- ボタン ---------- */
+.btn{
+  display:block; width:100%;
+  border:1.5px solid var(--gold); border-radius:0; background:transparent;
+  padding:var(--s-3); font-size:16px; font-weight:700; text-align:center;
+  color:var(--gold); letter-spacing:0.04em;
+  margin-top:var(--s-4);
+}
+.btn--fill{
+  background:linear-gradient(180deg,#F0C33C,#C9A227);
+  color:#1A1405; border-color:#F0C33C;
+  box-shadow:0 0 24px rgba(201,162,39,.35);
+}
+.btn:active{ transform:translate(1px,1px); }
+
+/* ---------- 入力 ---------- */
+.field{ display:block; margin-bottom:var(--s-4); }
+.field__label{
+  display:block; font-size:12px; letter-spacing:0.08em;
+  margin-bottom:var(--s-2); color:var(--gold);
+}
+textarea, select{
+  width:100%; font:inherit; font-size:16px; color:var(--chalk);
+  background:#0A0A0B; border:1.5px solid var(--gold-dim); border-radius:0;
+  padding:var(--s-2) var(--s-3); resize:none;
+}
+textarea::placeholder{ color:#5A5750; }
+textarea:focus, select:focus{ outline:2px solid var(--amber); outline-offset:1px; }
+select option{ background:#0A0A0B; color:var(--chalk); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:var(--s-2); margin:calc(var(--s-4) * -1 + var(--s-2)) 0 var(--s-4); }
+.chip{
+  border:1.5px solid var(--gold-dim); background:transparent; color:var(--dust);
+  padding:var(--s-2); font-size:12px;      /* タップ領域を確保 */
+}
+.chip--bad{ border-color:var(--lose); color:var(--lose); }
+
+/* ---------- 審査結果 ---------- */
+.verdict{
+  font-family:"Inter","Zen Kaku Gothic New";
+  font-size:48px; font-weight:700; line-height:1.1; margin:0 0 var(--s-3);
+}
+.verdict--reject{ color:var(--lose); text-shadow:0 0 20px rgba(255,23,68,.6); }
+.verdict--accept{ color:var(--win); text-shadow:0 0 20px rgba(0,200,83,.5); }
+
+.quote{
+  margin:0 0 var(--s-4); padding:var(--s-3);
+  border-left:6px solid var(--gold); background:#0A0A0B;
+  font-size:20px; font-weight:500; color:var(--chalk);
+}
+.reason{ font-size:16px; margin:0 0 var(--s-3); font-weight:500; }
+
+.kv{ display:flex; gap:var(--s-3); border-top:1.5px solid #2A2A2C; padding:var(--s-2) 0; }
+.kv__k{ flex:0 0 96px; font-size:12px; color:var(--dust); }
+.kv__v{ flex:1; font-size:14px; font-weight:500; }
+
+.dots i{ animation:blink 1.2s infinite; }
+.dots i:nth-child(2){ animation-delay:.2s; }
+.dots i:nth-child(3){ animation-delay:.4s; }
+@keyframes blink{ 0%,60%,100%{opacity:.2} 30%{opacity:1} }
+
+/* ============================================================
+   オッズ画面 — 電光掲示板
+   ============================================================ */
+.view--odds.is-on{ display:flex; }
+.view--odds{ background:#000; }
+.view--odds .view__pad{ flex:1; display:flex; flex-direction:column; padding-top:var(--s-5); }
+.view--odds #odds-judge{ margin-top:auto; }
+
+/* 掲示板の上端。LIVEランプと銘板 */
+.odds__top{
+  display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1.5px solid var(--gold-dim); padding-bottom:var(--s-2);
+  margin-bottom:var(--s-4);
+}
+.odds__plate{
+  font-family:"Inter"; font-size:12px; letter-spacing:0.24em; color:var(--gold);
+}
+.live{ display:flex; align-items:center; gap:var(--s-1); font-family:"Inter"; font-size:12px; letter-spacing:0.12em; color:var(--lose); }
+.live::before{
+  content:""; width:8px; height:8px; background:var(--lose);
+  border-radius:50%; box-shadow:0 0 8px var(--lose);
+  animation:pulse 1.4s infinite;
+}
+@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.odds__label{ font-size:16px; font-weight:700; margin:0 0 var(--s-5); color:var(--chalk); }
+
+.odds__figure{ display:flex; align-items:baseline; gap:var(--s-2); }
+.odds__num{
+  font-family:"Inter"; font-size:112px; font-weight:700;
+  line-height:0.9; letter-spacing:-0.04em;
+  font-variant-numeric:tabular-nums;
+  color:var(--amber);
+  text-shadow:0 0 6px rgba(255,177,0,.9), 0 0 28px rgba(255,177,0,.55), 0 0 64px rgba(255,177,0,.25);
+}
+.odds__unit{ font-size:24px; font-weight:700; color:var(--amber); }
+
+/* 更新の瞬間に一度だけ強く光らせる */
+.odds__figure.is-flash .odds__num{ animation:flash .55s ease-out; }
+@keyframes flash{
+  0%{ color:#fff; text-shadow:0 0 12px #fff, 0 0 48px rgba(255,255,255,.8), 0 0 90px rgba(255,177,0,.7); }
+  100%{ color:var(--amber); }
+}
+
+/* 前回からの動き。上がる＝もっと疑われた */
+.odds__delta{
+  font-family:"Inter"; font-size:14px; font-weight:700;
+  margin:var(--s-2) 0 0; min-height:22px; letter-spacing:0.04em;
+}
+.odds__delta.up{ color:var(--lose); }
+.odds__delta.down{ color:var(--win); }
+
+.odds__doubt{ font-size:20px; margin:var(--s-4) 0 var(--s-3); color:var(--chalk); }
+.odds__doubt b{ color:var(--lose); font-family:"Inter"; font-size:24px; text-shadow:0 0 12px rgba(255,23,68,.6); }
+
+/* 賭けの分布バー。緑＝やる／赤＝無理でしょ */
+.odds__bar{ height:14px; border:1.5px solid var(--gold-dim); background:var(--lose); }
+.odds__bar-do{ height:100%; background:var(--win); transition:width .6s ease; }
+
+.odds__time{ font-size:14px; color:var(--dust); margin:var(--s-3) 0 0; }
+.odds__time b{ color:var(--amber); font-family:"Inter"; }
+
+.rule{ border:0; border-top:1.5px solid #2A2A2C; margin:var(--s-5) 0 var(--s-3); }
+.odds__whisper{ font-size:12px; color:var(--dust); margin:0; }
+
+/* ============================================================
+   賭場 — カジノテーブル
+   ============================================================ */
+.view--floor{ background:var(--felt); }
+.view--floor::before{      /* フェルトの起毛 */
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:radial-gradient(rgba(0,0,0,.28) 1px, transparent 1px);
+  background-size:3px 3px;
+}
+
+.floor__head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:var(--s-3) var(--s-4);
+  border-bottom:1.5px solid var(--gold);
+  position:sticky; top:0; z-index:2;
+  background:var(--felt-deep);
+}
+.floor__credit{ font-size:12px; color:var(--dust); margin:0; }
+.floor__credit b{ font-family:"Inter"; color:var(--gold); }
+
+.floor__list{ list-style:none; margin:0; padding:0; position:relative; z-index:1; }
+.floor__item{ border-bottom:1.5px solid var(--felt-line); padding:var(--s-3) var(--s-4); }
+.floor__who{ font-size:12px; color:var(--gold-dim); margin:0 0 var(--s-1); font-family:"Inter"; }
+.floor__text{ font-size:16px; font-weight:700; margin:0 0 var(--s-2); color:var(--chalk); }
+
+.floor__meta{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; color:var(--dust); margin-bottom:var(--s-2);
+}
+.floor__odds{ font-family:"Inter"; font-weight:700; }
+
+/* 賭けボタンは行の末尾。倍率をボタンの中に入れて誤読を防ぐ */
+.floor__acts{ display:flex; gap:var(--s-2); }
+.bet{
+  flex:1; border:1.5px solid; border-radius:0; background:rgba(0,0,0,.35);
+  padding:var(--s-2); font-size:14px; font-weight:700;
+  display:flex; flex-direction:column; align-items:center; gap:var(--s-1);
+  line-height:1.2;
+}
+.bet .floor__odds{ font-family:"Inter"; font-size:14px; font-weight:700; }
+.bet--do{ border-color:var(--win); color:var(--win); }
+.bet--no{ border-color:var(--lose); color:var(--lose); }
+.bet--do.is-picked{ background:var(--win); color:#04240F; box-shadow:0 0 20px rgba(0,200,83,.5); }
+.bet--no.is-picked{ background:var(--lose); color:#2A0209; box-shadow:0 0 20px rgba(255,23,68,.5); }
+.bet:disabled:not(.is-picked){ border-color:#3E5B4E; color:#7E9389; cursor:default; box-shadow:none; }
+
+.floor__done{ font-size:12px; color:var(--gold); margin:var(--s-2) 0 0; }
+
+/* ---------- 証拠提出 ---------- */
+.dropzone{
+  border:1.5px dashed var(--gold-dim); background:#0A0A0B;
+  height:176px; display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:var(--dust); margin:var(--s-4) 0;
+  cursor:pointer;
+}
+.dropzone.is-filled{ border-style:solid; border-color:var(--gold); color:var(--gold); font-weight:700; }
+
+.meter{ height:14px; border:1.5px solid var(--gold-dim); }
+.meter__fill{ height:100%; width:0; background:var(--amber); box-shadow:0 0 12px var(--amber); transition:width .5s linear; }
+
+/* ---------- 結果 ---------- */
+.view--result{ background:#000; }
+.result__verdict{
+  font-family:"Inter","Zen Kaku Gothic New";
+  font-size:72px; font-weight:700; line-height:1; margin:0;
+}
+.result__verdict.is-win{ color:var(--win); text-shadow:0 0 12px rgba(0,200,83,.8), 0 0 48px rgba(0,200,83,.4); }
+.result__verdict.is-lose{ color:var(--lose); text-shadow:0 0 12px rgba(255,23,68,.8), 0 0 48px rgba(255,23,68,.4); }
+.result__declare{ font-size:16px; font-weight:700; margin:var(--s-2) 0 var(--s-5); color:var(--chalk); }
+
+/* 最大の疑い手＝負けた人が主役になる表彰枠 */
+.doubter{
+  border:1.5px solid var(--gold); padding:var(--s-3); width:100%;
+  background:linear-gradient(180deg, rgba(201,162,39,.14), rgba(201,162,39,.03));
+}
+.doubter__cap{ font-size:12px; letter-spacing:0.16em; color:var(--gold); margin:0; }
+.doubter__name{
+  font-family:"Inter"; font-size:32px; font-weight:700; margin:var(--s-1) 0; color:var(--chalk);
+  text-shadow:0 0 18px rgba(201,162,39,.5);
+}
+.doubter__loss{ font-size:12px; color:var(--dust); margin:0; }
+
+/* ---------- 装飾（カジノチップ） ---------- */
+.blob{ position:absolute; pointer-events:none; z-index:0; }
+.blob--empty{ position:static; width:132px; height:132px; }
+.blob--odds{ width:190px; height:190px; right:-96px; bottom:104px; opacity:.5; }
+.blob--result{ width:200px; height:200px; left:-80px; bottom:-48px; opacity:.6; }
+
+/* ---------- タブバー ---------- */
+.tabbar{ display:flex; border-top:1.5px solid var(--gold); flex:0 0 auto; background:var(--felt-deep); }
+.tab{
+  flex:1; border:0; background:transparent;
+  padding:var(--s-3); font-size:14px; font-weight:700; color:var(--gold-dim);
+  letter-spacing:0.08em;
+}
+.tab + .tab{ border-left:1.5px solid var(--gold-dim); }
+.tab.is-on{ color:var(--amber); text-shadow:0 0 12px rgba(255,177,0,.7); }
+
+/* ---------- デモ操作パネル ---------- */
+.demopanel{ border:1.5px solid var(--gold-dim); padding:var(--s-4); background:#0E0F10; }
+.demopanel__title{ font-size:20px; font-weight:700; margin:0; color:var(--gold); }
+.demopanel__note{ font-size:12px; color:var(--dust); margin:var(--s-1) 0 var(--s-4); }
+.demopanel__group{ border-top:1.5px solid #2A2A2C; padding-top:var(--s-3); margin-bottom:var(--s-3); }
+.demopanel__cap{ font-size:12px; letter-spacing:0.08em; color:var(--gold); margin:0 0 var(--s-2); }
+
+.dbtn{
+  display:block; width:100%; border:1.5px solid var(--gold-dim); background:transparent;
+  padding:var(--s-2); font-size:14px; font-weight:500; margin-bottom:var(--s-2); color:var(--chalk);
+}
+.dbtn:hover{ border-color:var(--gold); color:var(--gold); }
+.dbtn:active{ transform:translate(1px,1px); }
+.demopanel__jump{ display:flex; flex-wrap:wrap; gap:var(--s-2); }
+.dbtn--s{ width:auto; flex:0 0 auto; padding:var(--s-1) var(--s-2); font-size:12px; margin:0; }
+
+.radio{ display:flex; align-items:center; gap:var(--s-2); font-size:14px; margin-bottom:var(--s-2); }
+.radio input{ accent-color:var(--amber); }
+
+.formula{
+  font-family:"Inter"; font-size:12px; line-height:1.6; color:var(--amber);
+  border:1.5px solid #2A2A2C; padding:var(--s-2); margin:0;
+  white-space:pre-wrap; background:#000;
+}
+
+/* ---------- 画面遷移図 ---------- */
+.flowmap{ margin-top:var(--s-7); border-top:1.5px solid var(--gold-dim); padding-top:var(--s-4); }
+.flowmap__list{
+  list-style:none; display:flex; flex-wrap:wrap; gap:var(--s-2);
+  margin:var(--s-3) 0 0; padding:0; counter-reset:f;
+}
+.flowmap__list li{
+  border:1.5px solid var(--gold-dim); padding:var(--s-2) var(--s-3); background:#0E0F10;
+  display:flex; flex-direction:column; min-width:132px;
+}
+.flowmap__list li::before{
+  counter-increment:f; content:counter(f);
+  font-family:"Inter"; font-size:12px; color:var(--amber); font-weight:700;
+}
+.flowmap__list b{ font-size:16px; color:var(--chalk); }
+.flowmap__list span{ font-size:12px; color:var(--dust); }
+
+/* ---------- 狭幅：縮小でなく再配置 ---------- */
+@media (max-width:900px){
+  .stage{ padding:var(--s-4) var(--s-3) var(--s-7); }
+  .stage__body{ grid-template-columns:1fr; }
+  .phone{ width:100%; max-width:390px; height:720px; margin:0 auto; }
+  .view__center{ min-height:calc(720px - 56px - var(--s-8)); }
+  .wordmark{ font-size:36px; }
+}

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>無理でしょ — プロトタイプ</title>
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     SVG定義：グレイン（乗算）とハーフトーンドット。
+     装飾シェイプにだけ使う。画像アセットは持たない方針。
+     ============================================================ -->
+<svg class="svg-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- カジノチップ。currentColor で色を差し替えて使い回す -->
+    <g id="chip">
+      <circle cx="50" cy="50" r="46" fill="currentColor"/>
+      <!-- 外周のエッジマーク（ダッシュで表現） -->
+      <circle cx="50" cy="50" r="41" fill="none" stroke="#F5F2EA" stroke-width="10"
+              stroke-dasharray="13 21.46"/>
+      <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="2"/>
+      <!-- 内側のリング -->
+      <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(255,255,255,.65)"
+              stroke-width="1.5" stroke-dasharray="5 5"/>
+      <circle cx="50" cy="50" r="23" fill="rgba(0,0,0,.22)"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="stage">
+
+  <!-- ヘッダー：プロトの説明。実アプリの画面ではない -->
+  <header class="stage__head">
+    <div>
+      <h1 class="wordmark">無理でしょ</h1>
+      <p class="tagline">応援されるより、疑われたほうが人は動く。</p>
+    </div>
+    <p class="stamp">PROTOTYPE&nbsp;/&nbsp;v0.1</p>
+  </header>
+
+  <div class="stage__body">
+
+    <!-- ================= 端末フレーム ================= -->
+    <div class="phone">
+      <div class="phone__screen" id="screen">
+
+        <!-- ---------- 自分タブ：宣言がまだ無い状態 ---------- -->
+        <section class="view" data-view="empty">
+          <div class="view__pad view__center">
+            <svg class="blob blob--empty" viewBox="0 0 100 100" aria-hidden="true">
+              <use href="#chip" color="#FF1744"/>
+            </svg>
+            <h2 class="h-2">まだ、何も<br>宣言していない</h2>
+            <p class="muted">宣言すると、みんながあなたに賭けます。</p>
+            <button class="btn btn--fill" data-go="declare">宣言する</button>
+          </div>
+        </section>
+
+        <!-- ---------- 宣言：入力 ---------- -->
+        <section class="view" data-view="declare">
+          <div class="view__pad">
+            <p class="step">STEP 1 / 2</p>
+            <h2 class="h-2">何を、いつまでに？</h2>
+
+            <label class="field">
+              <span class="field__label">宣言</span>
+              <textarea id="declare-text" rows="3" placeholder="例）今週中にジムへ行く"></textarea>
+            </label>
+
+            <div class="chips">
+              <button class="chip" data-fill="今週中にジムへ行く">今週中にジムへ行く</button>
+              <button class="chip" data-fill="金曜までに履歴書を出す">金曜までに履歴書を出す</button>
+              <button class="chip chip--bad" data-fill="やる気を出す">やる気を出す</button>
+            </div>
+
+            <label class="field">
+              <span class="field__label">期限</span>
+              <select id="declare-due">
+                <option value="6">3日後</option>
+                <option value="14" selected>今週の日曜 23:59</option>
+                <option value="30">今月末</option>
+              </select>
+            </label>
+
+            <button class="btn btn--fill" id="declare-submit">審査にかける</button>
+            <p class="note">証明できない宣言は、受け付けられません。</p>
+          </div>
+        </section>
+
+        <!-- ---------- 宣言：AI審査の結果 ---------- -->
+        <section class="view" data-view="check">
+          <div class="view__pad">
+            <p class="step">STEP 2 / 2</p>
+
+            <!-- 審査中 -->
+            <div id="check-loading">
+              <h2 class="h-2">審査中<span class="dots"><i>.</i><i>.</i><i>.</i></span></h2>
+              <p class="muted">この宣言を、何で証明できるか調べています。</p>
+            </div>
+
+            <!-- 却下 -->
+            <div id="check-reject" hidden>
+              <p class="verdict verdict--reject">却下</p>
+              <blockquote class="quote" id="reject-quote"></blockquote>
+              <p class="reason" id="reject-reason"></p>
+              <p class="muted">達成したかどうかを、誰も判定できません。<br>賭けの対象にできない宣言です。</p>
+              <button class="btn" data-go="declare">書き直す</button>
+            </div>
+
+            <!-- 受理 -->
+            <div id="check-accept" hidden>
+              <p class="verdict verdict--accept">受理</p>
+              <blockquote class="quote" id="accept-quote"></blockquote>
+              <div class="kv">
+                <span class="kv__k">証拠の型</span>
+                <span class="kv__v" id="accept-proof"></span>
+              </div>
+              <div class="kv">
+                <span class="kv__k">判定</span>
+                <span class="kv__v">AI一次判定＋外した人の異議申し立て</span>
+              </div>
+              <p class="muted">この宣言は賭場に出されます。<br>あなたは自分に賭けられません。</p>
+              <button class="btn btn--fill" id="accept-go">賭場に出す</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- 自分のオッズ（本プロダクトの主役画面） ---------- -->
+        <section class="view view--odds led-grid" data-view="odds">
+          <div class="view__pad">
+            <div class="odds__top">
+              <span class="odds__plate">ODDS BOARD</span>
+              <span class="live">LIVE</span>
+            </div>
+
+            <p class="odds__label" id="odds-mydeclare">今週中にジムへ行く</p>
+
+            <div class="odds__figure" id="odds-figure">
+              <span class="odds__num" id="odds-value">3.4</span>
+              <span class="odds__unit">倍</span>
+            </div>
+            <p class="odds__delta" id="odds-delta"></p>
+
+            <p class="odds__doubt">
+              <b id="odds-doubt">68</b>% が「無理でしょ」
+            </p>
+
+            <div class="odds__bar" aria-hidden="true">
+              <div class="odds__bar-do" id="odds-bar-do"></div>
+            </div>
+
+            <p class="odds__time">残り <b id="odds-time">2日 14時間</b></p>
+
+            <hr class="rule">
+            <p class="odds__whisper">誰がいくら賭けたかは、あなたには見えません。</p>
+
+            <button class="btn btn--fill" id="odds-judge">証拠を出す</button>
+          </div>
+
+          <svg class="blob blob--odds" viewBox="0 0 100 100" aria-hidden="true">
+            <use href="#chip" color="#FF1744"/>
+          </svg>
+        </section>
+
+        <!-- ---------- 賭場（観客） ---------- -->
+        <section class="view view--floor" data-view="floor">
+          <div class="floor__head">
+            <h2 class="h-3">賭場</h2>
+            <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
+          </div>
+          <ul class="floor__list" id="floor-list"><!-- JSで描画 --></ul>
+        </section>
+
+        <!-- ---------- 判定：証拠提出 ---------- -->
+        <section class="view" data-view="judge">
+          <div class="view__pad">
+            <h2 class="h-2">証拠を出す</h2>
+            <div class="kv">
+              <span class="kv__k">求められている証拠</span>
+              <span class="kv__v" id="judge-proof">ジムでの写真、または位置情報</span>
+            </div>
+
+            <div class="dropzone" id="dropzone">
+              <span>タップして提出</span>
+            </div>
+
+            <div id="judge-progress" hidden>
+              <p class="muted" id="judge-step">証拠を照合しています…</p>
+              <div class="meter"><div class="meter__fill" id="judge-meter"></div></div>
+            </div>
+
+            <p class="note">提出後、外した人だけが異議を申し立てられます。</p>
+          </div>
+        </section>
+
+        <!-- ---------- 判定結果 ---------- -->
+        <section class="view view--result" data-view="result">
+          <div class="view__pad view__center">
+            <p class="result__verdict" id="result-verdict">達成</p>
+            <p class="result__declare" id="result-declare">今週中にジムへ行く</p>
+
+            <div class="doubter">
+              <p class="doubter__cap">最大の疑い手</p>
+              <p class="doubter__name" id="doubter-name">@yamada</p>
+              <p class="doubter__loss" id="doubter-loss">500 pt を失いました</p>
+            </div>
+
+            <p class="muted" id="result-payout">やる側 12人に 3.4倍 が配当されました。</p>
+            <button class="btn" data-go="floor">賭場へ戻る</button>
+          </div>
+
+          <svg class="blob blob--result" viewBox="0 0 100 100" aria-hidden="true">
+            <use href="#chip" color="#00C853"/>
+          </svg>
+        </section>
+
+      </div><!-- /.phone__screen -->
+
+      <!-- タブバー：実アプリのナビ -->
+      <nav class="tabbar">
+        <button class="tab is-on" data-tab="mine">自分</button>
+        <button class="tab" data-tab="floor">賭場</button>
+      </nav>
+    </div><!-- /.phone -->
+
+    <!-- ================= デモ操作パネル（端末の外＝実UIではない） ================= -->
+    <aside class="demopanel">
+      <h2 class="demopanel__title">デモ操作</h2>
+      <p class="demopanel__note">端末の外にある開発用パネル。実際のアプリには存在しません。</p>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">時間と賭けを動かす</p>
+        <button class="dbtn" id="d-flow">観客の賭けを流す</button>
+        <button class="dbtn" id="d-time">締切まで進める</button>
+        <button class="dbtn" id="d-reset">最初から</button>
+      </div>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">判定の結末を選ぶ</p>
+        <label class="radio"><input type="radio" name="outcome" value="win" checked><span>達成する</span></label>
+        <label class="radio"><input type="radio" name="outcome" value="lose"><span>失敗する</span></label>
+      </div>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">画面へ直接飛ぶ</p>
+        <div class="demopanel__jump">
+          <button class="dbtn dbtn--s" data-go="empty">空</button>
+          <button class="dbtn dbtn--s" data-go="declare">宣言</button>
+          <button class="dbtn dbtn--s" data-go="check">審査</button>
+          <button class="dbtn dbtn--s" data-go="odds">オッズ</button>
+          <button class="dbtn dbtn--s" data-go="floor">賭場</button>
+          <button class="dbtn dbtn--s" data-go="judge">証拠</button>
+          <button class="dbtn dbtn--s" data-go="result">結果</button>
+        </div>
+      </div>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">オッズの計算（パリミュチュエル）</p>
+        <pre class="formula" id="formula">やる 350pt / 無理 850pt
+倍率 = 1200 / 350 = 3.43</pre>
+      </div>
+    </aside>
+
+  </div><!-- /.stage__body -->
+
+  <!-- 画面遷移の全体図 -->
+  <section class="flowmap">
+    <h2 class="h-3">画面遷移</h2>
+    <ol class="flowmap__list">
+      <li><b>空</b><span>宣言がない状態</span></li>
+      <li><b>宣言</b><span>一言＋期限</span></li>
+      <li><b>審査</b><span>証拠の型を確定／却下</span></li>
+      <li><b>オッズ</b><span>本人が見る唯一の数字</span></li>
+      <li><b>賭場</b><span>観客が1タップで賭ける</span></li>
+      <li><b>証拠</b><span>提出→AI一次判定</span></li>
+      <li><b>結果</b><span>配当＋最大の疑い手</span></li>
+    </ol>
+  </section>
+
+</div><!-- /.stage -->
+
+<script src="app.js"></script>
+</body>
+</html>
