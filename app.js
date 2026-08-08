@@ -41,6 +41,7 @@ const state = {
   threadFor: null,     // 今スレッドを開いている賭場カードのid
   density: 'loose',    // 賭場の札の大きさ。loose / normal / tight
   table: 'on',         // 卓の背景。前後比較のため off にできる
+  propAmount: 100,     // 卓上の小物量。0〜200%、25%刻み
   rankTab: 'hits',     // 順位画面のどちら側。hits / done
 
   // 観客としての手持ち
@@ -470,6 +471,14 @@ function setTable(v){
   $$('.tablebtn').forEach(b => b.classList.toggle('is-on', b.dataset.tablePick === v));
 }
 
+function setPropAmount(value){
+  const amount = Math.min(200, Math.max(0, Number(value) || 0));
+  state.propAmount = amount;
+  $('#prop-amount').value = String(amount);
+  $('#prop-amount-value').textContent = `${amount}%`;
+  renderTableProps();
+}
+
 // 連続達成のバッジ。0週なら出さない（無いことをわざわざ責めない）
 function streakBadge(n){
   if (!n) return '';
@@ -496,8 +505,11 @@ function renderTableProps(){
   const kinds = ['chips', 'cards', 'cash', 'pawn'];
   const height = inner.offsetHeight;
   const width = inner.clientWidth;
-  // 前景の背後へ隠れるぶんを見込み、卓面積125pxごとに約1個置く。
-  const count = Math.max(12, Math.round(height / 125));
+  // 標準は、前景の背後へ隠れるぶんを見込み卓面積125pxごとに約1個。
+  // デモ操作ではカードのレイアウトを変えず、この基準個数だけを0〜200%で増減する。
+  const baseCount = Math.max(12, Math.round(height / 125));
+  const count = Math.round(baseCount * state.propAmount / 100);
+  $('#prop-amount-value').textContent = `${state.propAmount}%（${count}個）`;
 
   // LCG。カード数と卓高が同じなら必ず同じ景色になる。
   let seed = (0x6D2B79F5 ^ cards.length * 2654435761 ^ height) >>> 0;
@@ -645,6 +657,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 $('#journal-post').addEventListener('click', postJournal);
+$('#prop-amount').addEventListener('input', (e) => setPropAmount(e.target.value));
 
 // 宣言 → 審査
 $('#declare-submit').addEventListener('click', () => {
@@ -758,6 +771,7 @@ $('#d-reset').addEventListener('click', () => {
 updateFormula();
 setDensity(state.density);
 setTable(state.table);
+setPropAmount(state.propAmount);
 renderFloor();
 renderRank();
 show('empty');

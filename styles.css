@@ -881,6 +881,20 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .demopanel__jump{ display:flex; flex-wrap:wrap; gap:var(--s-2); }
 .dbtn--s{ width:auto; flex:0 0 auto; padding:var(--s-1) var(--s-2); font-size:12px; margin:0; }
 
+.prop-control{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:var(--s-3); margin:var(--s-4) 0 var(--s-1);
+  font-size:12px; color:var(--dust);
+}
+.prop-control output{ font-family:"Inter"; color:var(--amber); font-weight:700; }
+.prop-range{
+  display:block; width:100%; margin:0; accent-color:var(--amber); cursor:pointer;
+}
+.prop-scale{
+  display:flex; justify-content:space-between; margin-top:var(--s-1);
+  font-size:11px; color:var(--gold-dim);
+}
+
 .radio{ display:flex; align-items:center; gap:var(--s-2); font-size:14px; margin-bottom:var(--s-2); }
 .radio input{ accent-color:var(--amber); }
 
