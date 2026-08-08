@@ -37,6 +37,12 @@
   --s-5:32px; --s-6:48px; --s-7:64px; --s-8:96px;
 
   --line:1.5px solid var(--gold-dim);
+
+  /* 賭札の角。丸めるのは賭場の中だけで、端末フレームや他画面は角0のまま。
+     「角0」の原則から外すのはここだけなので、値はトークンに寄せておく */
+  --card-radius:14px;  /* 札そのもの */
+  --ctrl-radius:8px;   /* 札の中の賭けボタン・日誌ボタン */
+  --bar-radius:3px;    /* 支持率バー。高さ6pxなので3pxで半円になる */
 }
 
 *{ box-sizing:border-box; }
@@ -310,7 +316,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* 賭けボタンは行の末尾。倍率をボタンの中に入れて誤読を防ぐ */
 .floor__acts{ display:flex; gap:var(--s-2); }
 .bet{
-  flex:1; border:1.5px solid; border-radius:0; background:rgba(0,0,0,.35);
+  flex:1; border:1.5px solid; border-radius:var(--ctrl-radius); background:rgba(0,0,0,.35);
   padding:var(--s-2); font-size:14px; font-weight:700;
   display:flex; flex-direction:column; align-items:center; gap:var(--s-1);
   line-height:1.2;
@@ -324,18 +330,23 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 
 .floor__done{ font-size:12px; color:var(--gold); margin:var(--s-2) 0 0; }
 
-/* 本人の日誌を開くボタン。4スキン共通（機能チロムなのでスキンごとに変えない）。
+/* 本人の日誌を開くボタン。
    フェルト緑にも黒地にも乗るよう、半透明の黒地＋金枠にしておく */
 .floor__thread{
   display:flex; align-items:center; justify-content:center; gap:var(--s-1);
   width:100%; margin-top:var(--s-2);
-  border:1.5px solid var(--gold-dim); background:rgba(0,0,0,.3);
+  border:1.5px solid var(--gold-dim); border-radius:var(--ctrl-radius);
+  background:rgba(0,0,0,.3);
   color:var(--dust); padding:var(--s-2); font-size:12px;
 }
 .floor__thread:hover{ border-color:var(--gold); color:var(--gold); }
 .floor__thread b{ font-family:"Inter"; color:var(--amber); font-weight:700; }
 
-.floor__support{ height:6px; background:var(--lose); margin:0 0 var(--s-1); }
+/* 角丸版のときだけ内側の i を丸く切りたいので overflow を持たせる */
+.floor__support{
+  height:6px; background:var(--lose); margin:0 0 var(--s-1);
+  border-radius:var(--bar-radius); overflow:hidden;
+}
 .floor__support i{ display:block; height:100%; background:var(--win); }
 
 /* ============================================================
@@ -344,39 +355,25 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ============================================================ */
 
 /* --- 賭札：1件を1枚の札に ---
-   角0の原則は保ったまま、四隅を45°で面取りして「券」の形にする。
-   角丸にしないのは、他スキンも端末フレームも角が立っているため。
-   枠線は border ではなく「地＝金／::before＝札の面」の二枚重ねで作る。
-   clip-path は border を斜めに切ってくれないので、この作り方でないと
-   面取りした辺だけ金線が消える。 */
+   角丸＋金枠＋左端のミシン目で「券」に見せる。
+   角を丸めるのはこの札まわりだけで、端末フレームや他画面は角0のまま。 */
 [data-skin="card"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
 
 [data-skin="card"] .floor__item{
-  --notch:14px;   /* 面取りの深さ */
-  --edge:1.5px;   /* 金線の太さ。他の線と揃える */
-
-  position:relative; z-index:0;   /* ::before を -1 に置くための文脈 */
-  border:0;
-  background:var(--gold);         /* はみ出したぶんが枠線に見える */
-  clip-path:polygon(
-    var(--notch) 0, calc(100% - var(--notch)) 0,
-    100% var(--notch), 100% calc(100% - var(--notch)),
-    calc(100% - var(--notch)) 100%, var(--notch) 100%,
-    0 calc(100% - var(--notch)), 0 var(--notch));
+  position:relative; z-index:0;   /* ::after を -1 に置くための文脈 */
+  border:1.5px solid var(--gold);
+  border-radius:var(--card-radius);
+  /* 賭場のフェルト地を透かさないよう、地色まで自分で持つ */
+  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.35) 60%), var(--felt);
   /* 左だけ広いのはミシン目のぶん */
   padding:var(--s-3) var(--s-3) var(--s-3) var(--s-4);
   margin-bottom:var(--s-3);
 }
-/* 札の面。金の地から --edge だけ内側に置く */
-[data-skin="card"] .floor__item::before{
-  content:""; position:absolute; inset:var(--edge); z-index:-1;
-  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.35) 60%), var(--felt);
-  clip-path:inherit;
-}
-/* ミシン目。半券を切り離す線 */
+/* ミシン目。半券を切り離す線。角の丸みに食い込まないよう上下を半径ぶん空ける */
 [data-skin="card"] .floor__item::after{
   content:""; position:absolute; z-index:-1;
-  left:calc(var(--s-3) - 5px); top:var(--notch); bottom:var(--notch); width:2px;
+  left:calc(var(--s-3) - 5px); width:2px;
+  top:var(--card-radius); bottom:var(--card-radius);
   background:repeating-linear-gradient(
     to bottom, var(--gold-dim) 0 4px, transparent 4px 10px);
 }
