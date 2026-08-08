@@ -42,6 +42,9 @@
      可変長の卓で、照明の反復単位と上下レールの弧を決める基準にする */
   --screen-h:724px;
 
+  /* 目標カードの左右の余白。上げるほど札が狭くなり、外側に小物のレーンができる */
+  --card-inset:30px;
+
   /* 賭札の角。丸めるのは賭場の中だけで、端末フレームや他画面は角0のまま。
      「角0」の原則から外すのはここだけなので、値はトークンに寄せておく */
   --card-radius:14px;  /* 札そのもの */
@@ -124,6 +127,160 @@ button{ font:inherit; color:inherit; cursor:pointer; }
   text-align:center; gap:var(--s-3);
 }
 
+/* ============================================================
+   ホーム画面 — 店の入口。ロゴを主役に、5パターンの装飾を出し分ける
+   [data-home="neon|plate|marquee|fan|vault"] で切替。
+   地の装飾は .home__deco（コンテンツより奥・pointer-events:none）、
+   ロゴ・タグ・実績・導線は .home__body（手前）に分離する。
+   ============================================================ */
+.view--home{ background:var(--night); position:relative; overflow:hidden; }
+.view--home.is-on{ display:flex; flex-direction:column; }
+.home__deco{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.home__body{
+  position:relative; z-index:1; flex:1; min-height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:var(--s-6) var(--s-4);
+}
+.home__est{ font-family:"Inter"; font-size:11px; letter-spacing:.24em; color:var(--gold-dim); margin:0 0 var(--s-3); }
+.home__logo{ margin:0 0 var(--s-2); }
+.home__logo span{
+  display:inline-block; font-family:"Inter"; font-size:60px; font-weight:700;
+  letter-spacing:-0.02em; line-height:1; color:#fff;
+}
+.home__tag{ font-size:14px; color:var(--dust); margin:0 0 var(--s-5); }
+.home__stats{ display:flex; gap:var(--s-5); margin:0 0 var(--s-5); }
+.home__stats div{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+.home__stats b{ font-family:"Inter"; font-size:22px; font-weight:700; color:var(--amber); font-variant-numeric:tabular-nums; }
+.home__stats span{ font-size:10px; color:var(--dust); letter-spacing:.04em; }
+.home__body .btn{ width:260px; max-width:82%; }
+
+/* 各装飾パーツは既定で消しておき、パターンごとに個別へ opacity:1 を与える */
+.home__rays, .home__arch, .home__bulbs, .home__suits, .home__fan, .home__chips{ opacity:0; }
+
+/* --- A: neon（ネオンサイン） --- 光の放射＋強い発光のロゴ */
+.home__rays{
+  position:absolute; left:50%; top:34%; width:560px; height:560px;
+  transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(rgba(255,177,0,.14) 0deg 3deg, transparent 3deg 15deg);
+  border-radius:50%;
+}
+[data-home="neon"] .home__rays{ opacity:1; animation:homeSpin 60s linear infinite; }
+[data-home="neon"] .home__logo span{
+  color:#fff;
+  text-shadow:
+    0 0 4px rgba(255,23,68,.95), 0 0 18px rgba(255,23,68,.75),
+    0 0 46px rgba(255,23,68,.45), 0 0 90px rgba(255,177,0,.25);
+  animation:neonFlicker 4.2s ease-in-out infinite;
+}
+[data-home="neon"] .home__suits{ opacity:.8; color:var(--lose); filter:drop-shadow(0 0 6px rgba(255,23,68,.6)); }
+@keyframes homeSpin{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
+@keyframes neonFlicker{
+  0%,19%,21%,55%,57%,100%{ opacity:1; }
+  20%,56%{ opacity:.82; }
+}
+
+/* --- B: plate（金属彫刻） --- ロゴを金属プレートに刻む重厚な入口 */
+[data-home="plate"] .home__arch{
+  opacity:1; position:absolute; left:50%; top:16%; width:300px; height:300px;
+  transform:translateX(-50%);
+  border:3px solid var(--gold-dim);
+  background:
+    linear-gradient(160deg, rgba(201,162,39,.14), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 20%, rgba(255,255,255,.05), transparent 70%);
+  box-shadow:inset 0 0 0 6px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.08);
+}
+[data-home="plate"] .home__logo span{
+  color:transparent;
+  background:linear-gradient(180deg, #8C7A2E 0%, #F0C33C 46%, #6E5A18 100%);
+  -webkit-background-clip:text; background-clip:text;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.25)) drop-shadow(0 2px 2px rgba(0,0,0,.85));
+}
+[data-home="plate"] .home__suits{ opacity:.55; color:var(--gold-dim); }
+
+/* --- C: marquee（電飾看板） --- 縁を電球が点滅する劇場サイン */
+.home__bulbs{ position:absolute; inset:8% 6%; }
+.home__bulbs i{
+  position:absolute; width:8px; height:8px; border-radius:50%;
+  background:var(--amber); box-shadow:0 0 8px var(--amber), 0 0 2px #fff;
+}
+.home__bulbs i:nth-child(1){ left:0%;   top:0%; }
+.home__bulbs i:nth-child(2){ left:25%;  top:0%; }
+.home__bulbs i:nth-child(3){ left:50%;  top:0%; }
+.home__bulbs i:nth-child(4){ left:75%;  top:0%; }
+.home__bulbs i:nth-child(5){ left:100%; top:0%; }
+.home__bulbs i:nth-child(6){ left:100%; top:33%; }
+.home__bulbs i:nth-child(7){ left:100%; top:66%; }
+.home__bulbs i:nth-child(8){ left:100%; top:100%; }
+.home__bulbs i:nth-child(9){ left:75%;  top:100%; }
+.home__bulbs i:nth-child(10){ left:50%; top:100%; }
+.home__bulbs i:nth-child(11){ left:25%; top:100%; }
+.home__bulbs i:nth-child(12){ left:0%;  top:100%; }
+.home__bulbs i:nth-child(13){ left:0%;  top:66%; }
+.home__bulbs i:nth-child(14){ left:0%;  top:33%; }
+.home__bulbs i:nth-child(15){ left:50%; top:0%; transform:translateY(-14px); }
+.home__bulbs i:nth-child(16){ left:50%; top:100%; transform:translateY(14px); }
+[data-home="marquee"] .home__bulbs{ opacity:1; }
+[data-home="marquee"] .home__bulbs i{ animation:bulbBlink 1.4s infinite; }
+[data-home="marquee"] .home__bulbs i:nth-child(3n){ animation-delay:.25s; }
+[data-home="marquee"] .home__bulbs i:nth-child(3n+1){ animation-delay:.5s; }
+@keyframes bulbBlink{ 0%,100%{ opacity:1; } 50%{ opacity:.2; } }
+[data-home="marquee"] .home__logo span{
+  color:#fff;
+  text-shadow:0 0 6px rgba(255,255,255,.85), 0 0 22px rgba(255,177,0,.7);
+}
+[data-home="marquee"] .home__suits{ opacity:.7; color:var(--amber); }
+
+/* --- D: fan（カード扇） --- トランプを扇形に広げる
+   ロゴ下の帯（タグライン＋実績3数字）とCTAボタンの手前は空けておく必要がある。
+   その帯の高さぶん、扇の軸をボタン下の余白へ落とし、カード自体も一回り縮めて
+   「賭場へ入る」ボタン下の狭い余白の中に収める（コンテンツの手前を装飾で塞がない）。 */
+.home__fan{ position:absolute; left:50%; bottom:6%; }
+.home__fan i{
+  position:absolute; left:-21px; top:-36px; width:42px; height:73px;
+  border:1.5px solid rgba(237,234,227,.55); border-radius:4px;
+  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.4) 60%), var(--felt);
+  transform-origin:50% 91px;
+  box-shadow:0 6px 10px rgba(0,0,0,.5);
+}
+.home__fan i:nth-child(1){ transform:rotate(-32deg); }
+.home__fan i:nth-child(2){ transform:rotate(-16deg); }
+.home__fan i:nth-child(3){ transform:rotate(0deg); }
+.home__fan i:nth-child(4){ transform:rotate(16deg); }
+.home__fan i:nth-child(5){ transform:rotate(32deg); }
+[data-home="fan"] .home__fan{ opacity:1; }
+[data-home="fan"] .home__suits{ opacity:.7; color:var(--gold); }
+[data-home="fan"] .home__logo span{
+  color:#fff;
+  text-shadow:0 0 8px rgba(0,0,0,.9), 0 4px 18px rgba(0,0,0,.7);
+}
+
+/* --- E: vault（金庫扉） --- 円形の重厚な入口、ボルトを周囲に配置 */
+[data-home="vault"] .home__arch{
+  opacity:1; position:absolute; left:50%; top:18%; width:320px; height:320px;
+  transform:translateX(-50%); border-radius:50%;
+  border:8px solid #1E1B10;
+  background:
+    repeating-conic-gradient(rgba(255,255,255,.04) 0deg 2deg, transparent 2deg 10deg),
+    radial-gradient(circle at 50% 40%, rgba(201,162,39,.14), transparent 65%);
+  box-shadow:inset 0 0 0 3px var(--gold-dim), inset 0 0 26px rgba(0,0,0,.8), 0 0 0 2px rgba(0,0,0,.6);
+}
+.home__chips{ position:absolute; left:50%; top:18%; width:320px; height:320px; transform:translateX(-50%); }
+.home__chips i{
+  position:absolute; width:14px; height:14px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #F0C33C, #6E5A18 70%);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.5), 0 2px 3px rgba(0,0,0,.6);
+}
+.home__chips i:nth-child(1){ left:calc(50% - 7px); top:-7px; }
+.home__chips i:nth-child(2){ left:-7px; top:calc(50% - 7px); }
+.home__chips i:nth-child(3){ right:-7px; top:calc(50% - 7px); }
+[data-home="vault"] .home__chips{ opacity:1; }
+[data-home="vault"] .home__logo span{
+  color:transparent;
+  background:linear-gradient(180deg, #F0C33C, #6E5A18);
+  -webkit-background-clip:text; background-clip:text;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.85));
+}
+
 /* ---------- タイポ ---------- */
 .h-2{ font-size:32px; line-height:1.1; letter-spacing:-0.01em; font-weight:700; margin:0 0 var(--s-3); }
 .h-3{ font-size:20px; line-height:1.1; font-weight:700; margin:0; color:var(--gold); }
@@ -187,7 +344,9 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .reason{ font-size:16px; margin:0 0 var(--s-3); font-weight:500; }
 
 .kv{ display:flex; gap:var(--s-3); border-top:1.5px solid #2A2A2C; padding:var(--s-2) 0; }
-.kv__k{ flex:0 0 96px; font-size:12px; color:var(--dust); }
+/* 「求められている証拠」(9字) が96px幅に収まらず「証」だけ孤立して折返していた
+   （judge画面を実データで開いて発覚）。実データの最長ラベルが1行で収まる幅へ広げる */
+.kv__k{ flex:0 0 132px; font-size:12px; color:var(--dust); }
 .kv__v{ flex:1; font-size:14px; font-weight:500; }
 
 .dots i{ animation:blink 1.2s infinite; }
@@ -604,7 +763,9 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    角を丸めるのはこの札まわりだけで、端末フレームや他画面は角0のまま。 */
 /* 上端に卓の帯を確保する。ここにレール・ハウス刻印・ベッティングラインが出る。
    左右も少し広げて、札の脇からラシャを覗かせる */
-[data-skin="card"] .floor__list{ padding:150px var(--s-4) var(--s-6); }
+/* 左右は --card-inset で可変。値を上げるほど札が狭くなり、
+   その外側に卓と小物のためのレーンが広がる */
+[data-skin="card"] .floor__list{ padding:150px var(--card-inset) var(--s-6); }
 
 [data-skin="card"] .floor__item{
   position:relative; z-index:0;   /* ::after を -1 に置くための文脈 */
@@ -649,7 +810,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ------------------------------------------------------------ */
 
 /* --- 標準：余白と文字を1段階詰める --- */
-[data-density="normal"] .floor__list{ padding:132px var(--s-3) var(--s-5); }
+[data-density="normal"] .floor__list{ padding:132px var(--card-inset) var(--s-5); }
 [data-density="normal"] .floor__item{
   /* 札が小さくなるぶん角丸も浅くする。--card-radius は ::after のミシン目の
      上下の逃げにも使われているので、ここを変えれば両方が追随する */
@@ -669,7 +830,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="normal"] .floor__thread{ padding:var(--s-1) var(--s-2); }
 
 /* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
-[data-density="tight"] .floor__list{ padding:116px var(--s-2) var(--s-4); }
+[data-density="tight"] .floor__list{ padding:116px var(--card-inset) var(--s-4); }
 [data-density="tight"] .floor__item{
   --card-radius:9px;
   --ctrl-radius:5px;
@@ -831,6 +992,20 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .blob--odds{ width:190px; height:190px; right:-96px; top:96px; opacity:.45; }
 .blob--result{ width:200px; height:200px; left:-80px; bottom:-48px; opacity:.6; }
 
+/* 宣言・審査・証拠の各画面にも、賭場と同じチップ／スートの語彙で装飾を足す。
+   コンテンツより奥・低い不透明度に留め、操作の手前を塞がない */
+.blob--declare{ width:170px; height:170px; right:-64px; top:-36px; opacity:.14; color:var(--gold-dim); }
+.blob--check{ width:190px; height:190px; left:-70px; bottom:-60px; opacity:.16; color:var(--gold-dim); animation:homeSpin 22s linear infinite; }
+.view[data-view="check"].is-reject .blob--check{ color:var(--lose); opacity:.22; }
+.view[data-view="check"].is-accept .blob--check{ color:var(--win); opacity:.22; }
+.blob--judge{ width:160px; height:160px; right:-58px; bottom:-46px; opacity:.14; color:var(--gold-dim); }
+
+/* 順位画面：ヘッダー右上にスートの透かし */
+.rank__watermark{
+  position:absolute; right:var(--s-4); top:var(--s-3);
+  width:88px; height:auto; opacity:.16; color:var(--gold-dim); pointer-events:none;
+}
+
 /* ---------- タブバー ---------- */
 .tabbar{ display:flex; border-top:1.5px solid var(--gold); flex:0 0 auto; background:var(--felt-deep); }
 .tab{
@@ -895,6 +1070,77 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .reaction b{ font-family:"Inter"; font-weight:700; color:inherit; }
 .reaction.is-picked{ background:var(--amber); border-color:var(--amber); color:#1A1405; }
 .reaction:hover:not(.is-picked){ border-color:var(--gold); color:var(--gold); }
+
+/* ============================================================
+   賭けPを決めるスロット — .bet を押すと開くモーダル
+   .sheet／.notice と同じ「.phone 内に絶対配置した自前オーバーレイ」の作り。
+   Esc・背景クリック・やめる の3経路で閉じる
+   ============================================================ */
+.slot{
+  position:absolute; inset:0; z-index:40;
+  background:rgba(0,0,0,.82);
+  display:flex; align-items:center; justify-content:center; padding:var(--s-4);
+}
+.slot[hidden]{ display:none; }
+
+.slot__machine{
+  width:100%; background:var(--board);
+  border:2px solid var(--gold); padding:var(--s-4);
+  box-shadow:0 0 40px rgba(201,162,39,.28);
+  animation:noticeIn .22s ease-out;
+}
+
+.slot__head{ display:flex; align-items:baseline; gap:var(--s-2); margin-bottom:var(--s-4); }
+.slot__side{
+  flex:0 0 auto; font-size:13px; font-weight:700; letter-spacing:.06em;
+  border:1.5px solid var(--gold-dim); padding:2px var(--s-2); margin:0;
+}
+.slot__side.is-do{ color:var(--win); border-color:var(--win); }
+.slot__side.is-no{ color:var(--lose); border-color:var(--lose); }
+.slot__title{ flex:1; font-size:14px; font-weight:700; margin:0; color:var(--chalk); }
+
+.slot__body{ display:flex; align-items:center; gap:var(--s-3); justify-content:center; }
+.slot__reels{ display:flex; gap:var(--s-1); background:#000; border:1.5px solid var(--gold-dim); padding:var(--s-2); }
+.slot__reel{
+  width:44px; height:64px; border:1.5px solid var(--gold-dim); background:#0A0A0B;
+  display:flex; align-items:center; justify-content:center;
+}
+.slot__reel span{
+  font-family:"Inter"; font-size:32px; font-weight:700; color:var(--amber);
+  text-shadow:0 0 8px rgba(255,177,0,.7); font-variant-numeric:tabular-nums;
+}
+.slot__reel:active{ transform:translate(1px,1px); }
+.slot__unit{ font-size:16px; font-weight:700; color:var(--gold); margin:0; }
+
+/* レバー：掴んで上下ドラッグ／フォーカス時は上下矢印キーでも動かせる */
+.slot__lever{
+  position:relative; width:28px; height:120px; flex:0 0 auto;
+  touch-action:none; cursor:grab;
+}
+.slot__lever-rod{
+  position:absolute; left:50%; top:12px; bottom:0; width:6px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg, #1A1509, #4A3C12 50%, #1A1509);
+  border:1px solid var(--gold-dim);
+}
+.slot__lever-ball{
+  position:absolute; left:50%; top:0; width:28px; height:28px; border-radius:50%;
+  transform:translateX(-50%);
+  background:radial-gradient(circle at 35% 30%, #FF5B7A, var(--lose) 70%);
+  box-shadow:0 3px 6px rgba(0,0,0,.6), inset 0 0 0 2px rgba(0,0,0,.3);
+}
+.slot__lever:focus{ outline:2px solid var(--amber); outline-offset:2px; }
+.slot__lever:active{ cursor:grabbing; }
+
+.slot__hint{ font-size:11px; color:var(--dust); margin:var(--s-3) 0 0; text-align:center; }
+.slot__payout{ font-size:14px; text-align:center; margin:var(--s-1) 0 0; color:var(--chalk); }
+.slot__payout b{ font-family:"Inter"; color:var(--amber); font-size:18px; }
+
+.slot__acts{ display:flex; gap:var(--s-3); margin-top:var(--s-3); }
+/* 「この額で賭ける」が2列レイアウトの割当幅（実測135px）に収まらず、
+   「る」だけが孤立して2行目に落ちていた（390px端末幅での実測で発覚）。
+   ボタン内の文字はここだけ少し詰めて1行に収める */
+.slot__acts .btn{ margin-top:0; flex:1; font-size:14px; padding:var(--s-2) var(--s-1); letter-spacing:0; }
 
 /* ---------- デモ操作パネル ---------- */
 .demopanel{ border:1.5px solid var(--gold-dim); padding:var(--s-4); background:#0E0F10; }
