@@ -27,6 +27,15 @@
               stroke-width="1.5" stroke-dasharray="5 5"/>
       <circle cx="50" cy="50" r="23" fill="rgba(0,0,0,.22)"/>
     </g>
+
+    <!-- カードのスート。卓の刻印に使う。currentColor で色を差し替える -->
+    <g id="suit-spade"><path fill="currentColor"
+      d="M12 2C12 2 3.5 9 3.5 13.8c0 2.6 2 4.2 4.2 4.2 1.6 0 2.7-.9 3.2-1.6-.3 2.2-1.1 3.8-2.2 4.4h6.6c-1.1-.6-1.9-2.2-2.2-4.4.5.7 1.6 1.6 3.2 1.6 2.2 0 4.2-1.6 4.2-4.2C20.5 9 12 2 12 2z"/></g>
+    <g id="suit-heart"><path fill="currentColor"
+      d="M12 21.2S3.2 15.3 3.2 9.5A4.8 4.8 0 0 1 12 6.8a4.8 4.8 0 0 1 8.8 2.7c0 5.8-8.8 11.7-8.8 11.7z"/></g>
+    <g id="suit-diamond"><path fill="currentColor" d="M12 1.8l7.6 10.2L12 22.2 4.4 12z"/></g>
+    <g id="suit-club"><path fill="currentColor"
+      d="M12 2.2a4.2 4.2 0 0 0-3.4 6.7A4.2 4.2 0 1 0 7.8 17c1.1 0 2-.4 2.7-1.1-.2 2.2-1 3.8-2.1 4.9h7.2c-1.1-1.1-1.9-2.7-2.1-4.9.7.7 1.6 1.1 2.7 1.1a4.2 4.2 0 1 0-.8-8.1A4.2 4.2 0 0 0 12 2.2z"/></g>
   </defs>
 </svg>
 
@@ -193,9 +202,27 @@
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit"><b id="pt">1,200</b> pt</p>
           </div>
-          <!-- ポーカーテーブルの面。sticky で画面に貼り付けるので、
-               札をスクロールしてもテーブルの照明と縁は動かない -->
-          <div class="floor__table" aria-hidden="true"></div>
+          <!-- ポーカーテーブル。sticky で画面に貼り付けるので、
+               札をスクロールしても卓は動かない。
+               inner で overflow を切っているので、内側の楕円は好きなだけ大きくできる -->
+          <div class="floor__table" aria-hidden="true">
+            <div class="table__inner">
+              <div class="table__felt"></div>
+              <div class="table__line"></div>
+              <div class="table__mark">
+                <svg class="table__suits" viewBox="0 0 108 24">
+                  <use href="#suit-spade"   x="0"  />
+                  <use href="#suit-heart"   x="28" />
+                  <use href="#suit-diamond" x="56" />
+                  <use href="#suit-club"    x="84" />
+                </svg>
+                <p class="table__name">無理でしょ</p>
+                <p class="table__sub">NO LIMIT — DECLARE &amp; BET</p>
+              </div>
+              <div class="table__rail"><i></i></div>
+              <div class="table__rail table__rail--bottom"><i></i></div>
+            </div>
+          </div>
 
           <ul class="floor__list" id="floor-list"><!-- JSで描画 --></ul>
         </section>

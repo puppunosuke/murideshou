@@ -306,7 +306,8 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* ============================================================
    賭場 — カジノテーブル
    ============================================================ */
-.view--floor{ background:var(--felt-deep); }
+/* 卓の外側は会場の暗がり。フェルトは卓のレイヤーが持つ */
+.view--floor{ background:#070603; }
 
 /* ------------------------------------------------------------
    ポーカーテーブルの面
@@ -320,46 +321,83 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 /* 前後比較用。off にすると卓の演出を全部外して、元の無地のフェルトに戻る */
 [data-table="off"] .floor__table{ display:none; }
-[data-table="off"]{ background:var(--felt); }
-[data-table="off"].view--floor::before,
-[data-table="off"].view--floor::after{ display:none; }
-.floor__table::before{
-  content:""; position:absolute; left:0; right:0; top:0; height:var(--screen-h);
+[data-table="off"].view--floor{ background:var(--felt); }
+/* 内側で overflow を切る。ここから先の楕円は画面外へ大きくはみ出させてよい
+   （はみ出しをここで止めないと端末に横スクロールが出る） */
+.table__inner{
+  position:absolute; left:0; right:0; top:0; height:var(--screen-h);
+  overflow:hidden;
+}
 
+/* --- ラシャ面：照明・周辺減光・織り目 --- */
+.table__felt{
+  position:absolute; inset:0;
   background:
-    /* 1) 卓上の照明。中央やや上に落ちる */
-    radial-gradient(ellipse 76% 40% at 50% 30%, rgba(255,255,255,.09), transparent 70%),
-    /* 2) 周辺減光。卓の丸みと、縁へ向かう暗がり */
-    radial-gradient(ellipse 96% 66% at 50% 38%, transparent 52%, rgba(0,0,0,.5) 100%),
-    /* 3) ラシャの織り目。斜め2方向で布目を作る */
-    repeating-linear-gradient(45deg,  rgba(0,0,0,.05) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(-45deg, rgba(255,255,255,.028) 0 1px, transparent 1px 3px),
+    /* 卓上のスポット。中央やや上に強く落とす */
+    radial-gradient(ellipse 68% 34% at 50% 30%, rgba(255,255,255,.15), transparent 72%),
+    /* 縁へ向かう暗がり。卓の丸みを作る */
+    radial-gradient(ellipse 88% 58% at 50% 36%, transparent 42%, rgba(0,0,0,.62) 100%),
+    /* ラシャの織り目 */
+    repeating-linear-gradient(45deg,  rgba(0,0,0,.06) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
     var(--felt);
 }
-/* ベッティングライン。卓に引かれた金の弧。
-   左右へはみ出させると端末の横スクロールを作ってしまうので、
-   幅は画面内に収めたまま border-radius だけで曲率を作る */
-.floor__table::after{
-  content:""; position:absolute; left:0; right:0;
-  top:calc(var(--screen-h) * .10); height:calc(var(--screen-h) * .78);
-  border-top:1.5px solid rgba(201,162,39,.22);
-  border-radius:50% 50% 0 0 / 18% 18% 0 0;
+
+/* --- レール（クッション）：卓の縁。上と下に楕円の弧で出す --- */
+.table__rail{
+  position:absolute; left:-34%; right:-34%; top:calc(var(--screen-h) * -.48);
+  height:calc(var(--screen-h) * .62);
+  border-radius:50%;
+  /* 革張りの縁。パレットは黒〜金の範囲に収める */
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 92%, rgba(201,162,39,.16), transparent 60%),
+    linear-gradient(180deg, #0B0A07 0%, #1A1509 62%, #241C0C 100%);
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.7),                 /* 卓へ落ちる影 */
+    inset 0 -3px 10px rgba(0,0,0,.75);
+  border-bottom:2px solid rgba(201,162,39,.55);
+}
+/* レールのステッチ（縫い目）。弧に沿って点線を1本 */
+.table__rail i{
+  position:absolute; left:6%; right:6%; bottom:7px; height:40%;
+  border-radius:50%;
+  border-bottom:1.5px dashed rgba(201,162,39,.5);
+}
+/* 手前側（下）の縁。プレイヤーの座る側 */
+.table__rail--bottom{
+  top:auto; bottom:calc(var(--screen-h) * -.42);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 8%, rgba(201,162,39,.14), transparent 60%),
+    linear-gradient(0deg, #0B0A07 0%, #1A1509 62%, #241C0C 100%);
+  border-bottom:0; border-top:2px solid rgba(201,162,39,.45);
+  box-shadow:0 -6px 18px rgba(0,0,0,.7), inset 0 3px 10px rgba(0,0,0,.75);
+}
+.table__rail--bottom i{ bottom:auto; top:7px; border-bottom:0; border-top:1.5px dashed rgba(201,162,39,.4); }
+
+/* --- ベッティングライン：卓に引かれた金の弧。札の並びのすぐ手前に引く --- */
+.table__line{
+  position:absolute; left:-16%; right:-16%;
+  top:calc(var(--screen-h) * .175); height:calc(var(--screen-h) * .74);
+  border-radius:50%;
+  border-top:1.5px solid rgba(201,162,39,.32);
+  box-shadow:0 -1px 0 rgba(0,0,0,.4);
 }
 
-/* 卓の縁（レール）。左右の端だけ暗く落として、金のステッチを1本入れる */
-.view--floor::before{
-  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
-  background:
-    linear-gradient(90deg,
-      rgba(0,0,0,.55) 0, rgba(0,0,0,.18) 7px, transparent 10px),
-    linear-gradient(270deg,
-      rgba(0,0,0,.55) 0, rgba(0,0,0,.18) 7px, transparent 10px);
+/* --- ハウス刻印：卓の奥（レールのすぐ内側）。ディーラー側に入る店名 ---
+   卓の中央に置くと札に完全に隠れるので、札が始まる手前の帯へ寄せる */
+.table__mark{
+  position:absolute; left:0; right:0; top:calc(var(--screen-h) * .095);
+  text-align:center; color:var(--gold);
+  opacity:.42;
 }
-.view--floor::after{
-  content:""; position:absolute; top:0; bottom:0; left:8px; right:8px;
-  pointer-events:none; z-index:0;
-  border-left:1px solid rgba(201,162,39,.16);
-  border-right:1px solid rgba(201,162,39,.16);
+.table__suits{ width:104px; height:23px; color:var(--gold); }
+.table__name{
+  font-size:17px; font-weight:700; letter-spacing:.3em;
+  margin:2px 0 0; text-indent:.3em;   /* letter-spacing のぶん中央へ戻す */
+}
+.table__sub{
+  font-family:"Inter"; font-size:8px; letter-spacing:.32em;
+  margin:2px 0 0; text-indent:.32em; opacity:.8;
 }
 
 .floor__head{
@@ -438,8 +476,9 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* --- 賭札：1件を1枚の札に ---
    角丸＋金枠＋左端のミシン目で「券」に見せる。
    角を丸めるのはこの札まわりだけで、端末フレームや他画面は角0のまま。 */
-/* 上端を少し空けて、札の手前に卓の面とベッティングラインを覗かせる */
-[data-skin="card"] .floor__list{ padding:var(--s-4) var(--s-3) var(--s-5); }
+/* 上端に卓の帯を確保する。ここにレール・ハウス刻印・ベッティングラインが出る。
+   左右も少し広げて、札の脇からラシャを覗かせる */
+[data-skin="card"] .floor__list{ padding:150px var(--s-4) var(--s-6); }
 
 [data-skin="card"] .floor__item{
   position:relative; z-index:0;   /* ::after を -1 に置くための文脈 */
@@ -484,7 +523,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ------------------------------------------------------------ */
 
 /* --- 標準：余白と文字を1段階詰める --- */
-[data-density="normal"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
+[data-density="normal"] .floor__list{ padding:132px var(--s-3) var(--s-5); }
 [data-density="normal"] .floor__item{
   /* 札が小さくなるぶん角丸も浅くする。--card-radius は ::after のミシン目の
      上下の逃げにも使われているので、ここを変えれば両方が追随する */
@@ -504,7 +543,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="normal"] .floor__thread{ padding:var(--s-1) var(--s-2); }
 
 /* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
-[data-density="tight"] .floor__list{ padding:var(--s-3) var(--s-2) var(--s-3); }
+[data-density="tight"] .floor__list{ padding:116px var(--s-2) var(--s-4); }
 [data-density="tight"] .floor__item{
   --card-radius:9px;
   --ctrl-radius:5px;
