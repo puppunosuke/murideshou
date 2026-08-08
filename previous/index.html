@@ -202,8 +202,8 @@
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit"><b id="pt">1,200</b> pt</p>
           </div>
-          <!-- ポーカーテーブル。賭場セクション全体へ敷くので、
-               目標カードが増えたぶんだけ卓も下へ伸びる。
+          <!-- ポーカーテーブル。sticky で画面に貼り付けるので、
+               札をスクロールしても卓は動かない。
                inner で overflow を切っているので、内側の楕円は好きなだけ大きくできる -->
           <div class="floor__table" aria-hidden="true">
             <div class="table__inner">
@@ -219,32 +219,6 @@
                 <p class="table__name">無理でしょ</p>
                 <p class="table__sub">NO LIMIT — DECLARE &amp; BET</p>
               </div>
-
-              <!-- プレイ中の痕跡。操作UIではなく、卓の背景としてだけ存在する -->
-              <div class="table__props">
-                <div class="table-prop table-prop--chips">
-                  <svg class="prop-chip prop-chip--red" viewBox="0 0 100 100"><use href="#chip"/></svg>
-                  <svg class="prop-chip prop-chip--gold" viewBox="0 0 100 100"><use href="#chip"/></svg>
-                  <svg class="prop-chip prop-chip--ivory" viewBox="0 0 100 100"><use href="#chip"/></svg>
-                  <svg class="prop-chip prop-chip--red2" viewBox="0 0 100 100"><use href="#chip"/></svg>
-                </div>
-
-                <div class="table-prop table-prop--cards">
-                  <i class="prop-card prop-card--back"></i>
-                  <i class="prop-card prop-card--face">
-                    <b>A</b>
-                    <svg viewBox="0 0 24 24"><use href="#suit-spade"/></svg>
-                  </i>
-                </div>
-
-                <div class="table-prop table-prop--cash">
-                  <i class="prop-note prop-note--back"><b>100</b></i>
-                  <i class="prop-note"><span>$</span><b>100</b></i>
-                </div>
-
-                <div class="table-prop table-prop--pawn"><i></i></div>
-              </div>
-
               <div class="table__rail"><i></i></div>
               <div class="table__rail table__rail--bottom"><i></i></div>
             </div>
@@ -365,17 +339,10 @@
       <div class="demopanel__group">
         <p class="demopanel__cap">卓の地（ポーカーテーブル）</p>
         <div class="demopanel__jump">
-          <button class="dbtn dbtn--s tablebtn" data-table-pick="off">卓なし</button>
-          <button class="dbtn dbtn--s tablebtn" data-table-pick="on">現在の卓</button>
+          <button class="dbtn dbtn--s tablebtn" data-table-pick="off">前（無地）</button>
+          <button class="dbtn dbtn--s tablebtn" data-table-pick="on">後（卓）</button>
         </div>
-        <p class="demopanel__hint">カード数で伸びるラシャ・レール・プレイ中の小物の有無を見比べる</p>
-      </div>
-
-      <div class="demopanel__group">
-        <p class="demopanel__cap">バージョン比較</p>
-        <a class="dbtn dbtn--link" href="https://puppunosuke.github.io/murideshou/previous/"
-           target="_blank" rel="noopener">直前の公開版を別タブで開く ↗</a>
-        <p class="demopanel__hint">公開するたび、ひとつ前の版をこのURLへ自動保存する</p>
+        <p class="demopanel__hint">照明・織り目・ベッティングライン・レールの有無を見比べる</p>
       </div>
 
       <div class="demopanel__group">

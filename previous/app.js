@@ -460,7 +460,6 @@ function setDensity(d){
   $('#floor-view').dataset.density = d;
   $('#dens-hint').textContent = DENSITY_HINT[d] || '';
   $$('.densbtn').forEach(b => b.classList.toggle('is-on', b.dataset.densityPick === d));
-  renderTableProps();
 }
 
 // 卓の地の有無。ポーカーテーブルの前後を見比べるための切り替え
@@ -476,47 +475,10 @@ function streakBadge(n){
   return `<span class="streak">${n}週連続</span>`;
 }
 
-// 目標カードの間へ卓上小物を散らす。
-// CSSの高さを推測せず、描画済みカードの実座標を使うので密度3段階すべてに追随する。
-function renderTableProps(){
-  const props = $('.table__props');
-  const inner = $('.table__inner');
-  const cards = $$('#floor-list .floor__item');
-  if (!props || !inner) return;
-
-  props.querySelectorAll('.table-scatter').forEach(el => el.remove());
-  if (!cards.length || inner.offsetHeight === 0) return;  // 非表示画面では show('floor') 後に再実行される
-
-  const source = {
-    chips: props.querySelector(':scope > .table-prop--chips'),
-    cards: props.querySelector(':scope > .table-prop--cards'),
-    cash:  props.querySelector(':scope > .table-prop--cash'),
-    pawn:  props.querySelector(':scope > .table-prop--pawn'),
-  };
-  const innerTop = inner.getBoundingClientRect().top;
-
-  cards.forEach((card, index) => {
-    // 1・3・5枚目…の後ろだけを小物帯にする。最後の札の後ろには置かない。
-    if (index % 2 !== 0 || index === cards.length - 1) return;
-
-    const scatter = document.createElement('div');
-    const pairIndex = Math.floor(index / 2);
-    const leftPair = pairIndex % 2 !== 0;
-    scatter.className = `table-scatter ${leftPair ? 'table-scatter--left' : 'table-scatter--right'}`;
-    scatter.style.setProperty('--scatter-y', `${Math.round(card.getBoundingClientRect().bottom - innerTop + 10)}px`);
-
-    // チップ＋紙幣、カード＋ポーンを交互に置き、同じ模様の反復に見せない。
-    const kinds = leftPair ? ['cards', 'pawn'] : ['chips', 'cash'];
-    kinds.forEach(kind => scatter.append(source[kind].cloneNode(true)));
-    props.append(scatter);
-  });
-}
-
 function renderFloor(){
   $('#pt').textContent = state.pt.toLocaleString();
 
   $('#floor-list').innerHTML = state.floor.map(floorItemHTML).join('');
-  renderTableProps();
 }
 
 function placeBet(id, side){
