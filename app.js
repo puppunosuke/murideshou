@@ -4,6 +4,20 @@
    本番で外部に出す想定の処理には「本番:」コメントを添える。
    ============================================================ */
 
+// 反応の定型文。押した人は1コメントにつき1つだけ選べる（もう一度押すと取り消し）
+// state の初期データ（floor の comments）がこれを使うので、state より先に定義する
+const REACTIONS = [
+  { id:'cheer', label:'がんばれ！' },
+  { id:'doubt', label:'本当に？' },
+  { id:'free',  label:'言うだけならタダ' },
+  { id:'trust', label:'信じてる' },
+];
+
+function mkReactions(counts){
+  const base = Object.fromEntries(REACTIONS.map(r => [r.id, 0]));
+  return { ...base, ...counts };
+}
+
 // ---------- 状態 ----------
 const state = {
   tab: 'mine',
@@ -17,27 +31,50 @@ const state = {
     poolDo: 350,   // 「やる」に賭けられた総額
     poolNo: 850,   // 「無理でしょ」に賭けられた総額
     hoursLeft: 62,
+    lastPostDay: 0,   // 最後に日誌を投稿した日。今日と同じなら投稿済み
+    comments: [],     // 自分の日誌（宣言者本人が書く、1日1回）
   },
 
   lastOdds: null,   // 前回表示した倍率。変動の矢印を出すために持つ
-  floorSkin: 'board',  // 賭場の見た目。plain / board / card / ticker
+  day: 4,              // 通し日数。日誌の「1日1回」制限の基準
+  threadFor: null,     // 今スレッドを開いている賭場カードのid
 
   // 観客としての手持ち
   pt: 1200,
   betsLeft: 3,     // 1日3回まで。使わないと消える＝流通を作るための制約
 
-  // 賭場に並ぶ他人の宣言
+  // 賭場に並ぶ他人の宣言。comments は宣言者本人が書いた日誌のスレッド
   floor: [
-    { id:1, who:'@kenta',  text:'金曜までに履歴書を出す',       poolDo:420, poolNo:180, hoursLeft:38, myBet:null },
-    { id:2, who:'@mio',    text:'今月中に5kmを30分で走る',      poolDo:260, poolNo:940, hoursLeft:210, myBet:null },
-    { id:3, who:'@shun',   text:'明日6時に起きる',              poolDo:610, poolNo:590, hoursLeft:14, myBet:null },
-    { id:4, who:'@aya',    text:'週末までに部屋を片付ける',      poolDo:150, poolNo:770, hoursLeft:56, myBet:null },
-    { id:5, who:'@takuo',  text:'今日中にプロトを動かす',        poolDo:300, poolNo:900, hoursLeft:6,  myBet:null },
+    { id:1, who:'@kenta',  text:'金曜までに履歴書を出す',       poolDo:420, poolNo:180, hoursLeft:38,  myBet:null, comments: [
+      { id:101, day:1, text:'まず職務経歴書のフォーマットだけ決めた。', reactions: mkReactions({cheer:4, doubt:0, free:1, trust:2}), myReaction:null },
+      { id:102, day:2, text:'書き出したら止まらなくなってきた。明日には終わりそう。', reactions: mkReactions({cheer:9, doubt:1, free:0, trust:5}), myReaction:null },
+    ]},
+    { id:2, who:'@mio',    text:'今月中に5kmを30分で走る',      poolDo:260, poolNo:940, hoursLeft:210, myBet:null, comments: [
+      { id:201, day:1, text:'今日は2kmで足が終わった。先は長い。', reactions: mkReactions({cheer:6, doubt:3, free:2, trust:1}), myReaction:null },
+      { id:202, day:3, text:'3km、28分ペースまで来た。いける気がしてきた。', reactions: mkReactions({cheer:11, doubt:0, free:0, trust:4}), myReaction:null },
+    ]},
+    { id:3, who:'@shun',   text:'明日6時に起きる',              poolDo:610, poolNo:590, hoursLeft:14,  myBet:null, comments: [
+      { id:301, day:3, text:'アラーム3個セットした。これで多分いける。', reactions: mkReactions({cheer:2, doubt:8, free:5, trust:0}), myReaction:null },
+    ]},
+    { id:4, who:'@aya',    text:'週末までに部屋を片付ける',      poolDo:150, poolNo:770, hoursLeft:56,  myBet:null, comments: [
+      { id:401, day:2, text:'服だけ全部たたんだ。本棚は見なかったことにした。', reactions: mkReactions({cheer:3, doubt:2, free:6, trust:0}), myReaction:null },
+    ]},
+    { id:5, who:'@takuo',  text:'今日中にプロトを動かす',        poolDo:300, poolNo:900, hoursLeft:6,   myBet:null, comments: [
+      { id:501, day:4, text:'賭場の画面だけ4案作ってる。まだ終わらない。', reactions: mkReactions({cheer:7, doubt:1, free:3, trust:2}), myReaction:null },
+    ]},
   ],
 };
 
 const BET_UNIT = 100;   // 1回の賭け金は固定。金額で悩ませない
-const DEFAULT_MINE = JSON.parse(JSON.stringify(state.mine));
+
+const DEFAULT_MINE  = JSON.parse(JSON.stringify(state.mine));
+const DEFAULT_FLOOR = JSON.parse(JSON.stringify(state.floor));
+const DEFAULT_DAY   = state.day;
+
+// コメント本文をそのままinnerHTMLへ差し込むので、必ずエスケープする
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 // ---------- 小道具 ----------
 const $  = (sel) => document.querySelector(sel);
@@ -122,6 +159,79 @@ function renderOdds(){
 
   countUp($('#odds-value'), value);
   updateFormula();
+  renderJournal();
+}
+
+// ---------- 自分の日誌（宣言者本人が1日1回だけ書ける） ----------
+function renderJournal(){
+  const postedToday = state.mine.lastPostDay === state.day;
+  $('#journal-day').textContent = `Day ${state.day}`;
+  $('#journal-compose').hidden = postedToday;
+  $('#journal-done').hidden = !postedToday;
+
+  const sorted = [...state.mine.comments].sort((a, b) => b.day - a.day);
+  $('#journal-log').innerHTML = sorted.map(c => `
+    <li class="journal__entry">
+      <span class="journal__entry-day">Day ${c.day}</span>
+      <p class="journal__entry-text">${escapeHtml(c.text)}</p>
+      <p class="journal__entry-reactions">${REACTIONS.map(r =>
+        c.reactions[r.id] > 0 ? `${r.label} ${c.reactions[r.id]}` : ''
+      ).filter(Boolean).join('　')}</p>
+    </li>`).join('') || '<li class="journal__empty">まだ何も書いていない</li>';
+}
+
+function postJournal(){
+  const text = $('#journal-text').value.trim();
+  if (!text || state.mine.lastPostDay === state.day) return;
+  state.mine.comments.push({ id: Date.now(), day: state.day, text, reactions: mkReactions({}) });
+  state.mine.lastPostDay = state.day;
+  $('#journal-text').value = '';
+  renderJournal();
+}
+
+// ---------- 賭場カードのスレッド（他人の日誌への反応） ----------
+function openThread(itemId){
+  const item = state.floor.find(x => x.id === itemId);
+  if (!item) return;
+  state.threadFor = itemId;
+  $('#thread-who').textContent = item.who;
+  $('#thread-declare').textContent = item.text;
+  renderThread();
+  $('#thread-dialog').showModal();
+}
+
+function renderThread(){
+  const item = state.floor.find(x => x.id === state.threadFor);
+  if (!item) return;
+  const sorted = [...item.comments].sort((a, b) => b.day - a.day);
+  $('#thread-list').innerHTML = sorted.length ? sorted.map(c => `
+    <li class="thread-item">
+      <p class="thread-item__day">Day ${c.day}</p>
+      <p class="thread-item__text">${escapeHtml(c.text)}</p>
+      <div class="thread-item__reactions">
+        ${REACTIONS.map(r => `
+          <button class="reaction ${c.myReaction === r.id ? 'is-picked' : ''}"
+                  data-react="${r.id}" data-comment="${c.id}">
+            ${r.label}<b>${c.reactions[r.id]}</b>
+          </button>`).join('')}
+      </div>
+    </li>`).join('') : '<li class="thread-empty">まだ日誌がありません</li>';
+}
+
+function reactTo(commentId, reactionId){
+  const item = state.floor.find(x => x.id === state.threadFor);
+  const c = item && item.comments.find(x => x.id === commentId);
+  if (!c) return;
+  if (c.myReaction === reactionId){
+    c.reactions[reactionId] -= 1;
+    c.myReaction = null;
+  } else {
+    if (c.myReaction) c.reactions[c.myReaction] -= 1;
+    c.reactions[reactionId] += 1;
+    c.myReaction = reactionId;
+  }
+  renderThread();
+  renderFloor();   // 賭場一覧側のコメント件数・最新の一言も更新する
 }
 
 // 前回からの変動を掲示板らしく出す。上がる＝もっと疑われた
@@ -170,8 +280,7 @@ function updateFormula(){
 }
 
 // ---------- 賭場 ----------
-// 1行分のHTML。4つの見た目案はすべてこの同じマークアップをCSSで作り分ける。
-// （案ごとにDOMを分けると、どの差が本当にデザインの差なのか分からなくなるため）
+// 札1枚ぶんのHTML。見た目は styles.css の [data-skin="card"] が付ける
 function floorItemHTML(item, i){
   const total = item.poolDo + item.poolNo;
   const oDo   = odds(item.poolDo, item.poolNo).toFixed(2);
@@ -188,7 +297,6 @@ function floorItemHTML(item, i){
       <p class="floor__text">${item.text}</p>
 
       <div class="floor__support" aria-hidden="true"><i style="width:${supportDo.toFixed(1)}%"></i></div>
-      <p class="floor__ratio">やる ${Math.round(supportDo)}%　—　無理でしょ ${100 - Math.round(supportDo)}%</p>
 
       <div class="floor__meta">
         <span class="floor__time">${item.hoursLeft > 0 ? '残り ' + fmtTime(item.hoursLeft) : '締切'}</span>
@@ -205,6 +313,10 @@ function floorItemHTML(item, i){
           無理でしょ<b class="floor__odds">${oNo}倍</b></button>
       </div>
       ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
+
+      <button class="floor__thread" data-thread-open="${item.id}">
+        本人の日誌を読む<b>${item.comments.length}</b>
+      </button>
     </li>`;
 }
 
@@ -212,17 +324,7 @@ function renderFloor(){
   $('#bet-left').textContent = state.betsLeft;
   $('#pt').textContent = state.pt.toLocaleString();
 
-  const html = state.floor.map(floorItemHTML).join('');
-  // 端末の中の賭場と、下の比較エリア4つを同じデータで描く
-  $$('.floor__list').forEach(ul => { ul.innerHTML = html; });
-}
-
-// 賭場の見た目を切り替える
-function setFloorSkin(skin){
-  state.floorSkin = skin;
-  $('#floor-view').dataset.skin = skin;
-  $$('.cmp__item').forEach(el => el.classList.toggle('is-chosen', el.dataset.skin === skin));
-  $$('.skinbtn').forEach(b => b.classList.toggle('is-on', b.dataset.skinPick === skin));
+  $('#floor-list').innerHTML = state.floor.map(floorItemHTML).join('');
 }
 
 function placeBet(id, side){
@@ -297,14 +399,21 @@ document.addEventListener('click', (e) => {
   const bet = e.target.closest('.bet');
   if (bet){ placeBet(Number(bet.dataset.id), bet.dataset.bet); return; }
 
-  // 見た目の切り替え（デモパネル／比較エリアの採用ボタン）
-  const skin = e.target.closest('[data-skin-pick]');
-  if (skin){
-    setFloorSkin(skin.dataset.skinPick);
-    if (skin.classList.contains('cmp__adopt')) show('floor');
-    return;
-  }
+  const threadOpen = e.target.closest('[data-thread-open]');
+  if (threadOpen){ openThread(Number(threadOpen.dataset.threadOpen)); return; }
+
+  const reactBtn = e.target.closest('.reaction');
+  if (reactBtn){ reactTo(Number(reactBtn.dataset.comment), reactBtn.dataset.react); return; }
+
+  if (e.target.closest('#thread-close')){ $('#thread-dialog').close(); return; }
 });
+
+// ダイアログの背景（::backdrop相当の外側クリック）で閉じる
+$('#thread-dialog').addEventListener('click', (e) => {
+  if (e.target.id === 'thread-dialog') $('#thread-dialog').close();
+});
+
+$('#journal-post').addEventListener('click', postJournal);
 
 // 宣言 → 審査
 $('#declare-submit').addEventListener('click', () => {
@@ -331,8 +440,9 @@ $('#declare-submit').addEventListener('click', () => {
     $('#accept-proof').textContent = r.proof;
     $('#check-accept').hidden = false;
 
-    // 受理された内容で自分の宣言を差し替える。プールは初期値から始める
-    state.mine = { text:text.trim(), proof:r.proof, poolDo:100, poolNo:100, hoursLeft:due * 6 };
+    // 受理された内容で自分の宣言を差し替える。プールと日誌は初期値から始める
+    state.mine = { text:text.trim(), proof:r.proof, poolDo:100, poolNo:100, hoursLeft:due * 6,
+                    lastPostDay:0, comments:[] };
   }, 1400);
 });
 
@@ -371,13 +481,22 @@ $('#d-time').addEventListener('click', () => {
   if (state.view === 'floor') renderFloor();
 });
 
+$('#d-day').addEventListener('click', () => {
+  // 日誌の「1日1回」をデモで確かめるための日送り。締切やオッズには触らない
+  state.day += 1;
+  if (state.view === 'odds') renderJournal();
+});
+
 $('#d-reset').addEventListener('click', () => {
   state.hasDeclared = false;
   state.mine = JSON.parse(JSON.stringify(DEFAULT_MINE));
+  state.floor = JSON.parse(JSON.stringify(DEFAULT_FLOOR));
+  state.day = DEFAULT_DAY;
+  state.threadFor = null;
   state.pt = 1200;
   state.betsLeft = 3;
-  state.floor.forEach(i => { i.myBet = null; });
   $('#declare-text').value = '';
+  $('#journal-text').value = '';
   const dz = $('#dropzone');
   dz.classList.remove('is-filled');
   dz.textContent = 'タップして提出';
@@ -386,11 +505,11 @@ $('#d-reset').addEventListener('click', () => {
   $('#odds-value').textContent = '0';
   state.lastOdds = null;
   $('#odds-delta').textContent = '';
+  if ($('#thread-dialog').open) $('#thread-dialog').close();
   show('empty');
 });
 
 // ---------- 起動 ----------
 updateFormula();
-renderFloor();              // 比較エリアも最初から埋めておく
-setFloorSkin(state.floorSkin);
+renderFloor();
 show('empty');

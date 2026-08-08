@@ -158,6 +158,23 @@
             <p class="odds__whisper">誰がいくら賭けたかは、あなたには見えません。</p>
 
             <button class="btn btn--fill" id="odds-judge">証拠を出す</button>
+
+            <!-- 日誌：宣言者本人が1日1回だけ書ける。賭場のスレッドとして他人に見られる -->
+            <div class="journal">
+              <div class="journal__head">
+                <span class="journal__cap">今日の日誌</span>
+                <span class="journal__day" id="journal-day">Day 4</span>
+              </div>
+
+              <div id="journal-compose">
+                <textarea id="journal-text" rows="2" placeholder="今日の進捗を、正直に書く"></textarea>
+                <button class="btn" id="journal-post">投稿する</button>
+                <p class="note">1日1回まで。賭場であなたのスレッドとして誰でも読める。</p>
+              </div>
+              <p class="journal__posted" id="journal-done" hidden>今日はもう投稿済み。また明日。</p>
+
+              <ul class="journal__log" id="journal-log"><!-- JSで描画 --></ul>
+            </div>
           </div>
 
           <svg class="blob blob--odds" viewBox="0 0 100 100" aria-hidden="true">
@@ -166,7 +183,7 @@
         </section>
 
         <!-- ---------- 賭場（観客） ---------- -->
-        <section class="view view--floor" data-view="floor" id="floor-view" data-skin="board">
+        <section class="view view--floor" data-view="floor" id="floor-view" data-skin="card">
           <div class="floor__head">
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
@@ -224,6 +241,18 @@
         <button class="tab is-on" data-tab="mine">自分</button>
         <button class="tab" data-tab="floor">賭場</button>
       </nav>
+
+      <!-- スレッド：賭場カード1件ぶんの日誌一覧。一覧の直下へ積まず、dialogへ分離する -->
+      <dialog id="thread-dialog" class="thread-dialog">
+        <div class="thread-dialog__head">
+          <div>
+            <p class="thread-dialog__who" id="thread-who">@kenta</p>
+            <p class="thread-dialog__text" id="thread-declare"></p>
+          </div>
+          <button class="thread-dialog__close" id="thread-close" aria-label="閉じる">×</button>
+        </div>
+        <ul class="thread-dialog__list" id="thread-list"><!-- JSで描画 --></ul>
+      </dialog>
     </div><!-- /.phone -->
 
     <!-- ================= デモ操作パネル（端末の外＝実UIではない） ================= -->
@@ -235,6 +264,7 @@
         <p class="demopanel__cap">時間と賭けを動かす</p>
         <button class="dbtn" id="d-flow">観客の賭けを流す</button>
         <button class="dbtn" id="d-time">締切まで進める</button>
+        <button class="dbtn" id="d-day">次の日にする（日誌が解禁）</button>
         <button class="dbtn" id="d-reset">最初から</button>
       </div>
 
@@ -242,16 +272,6 @@
         <p class="demopanel__cap">判定の結末を選ぶ</p>
         <label class="radio"><input type="radio" name="outcome" value="win" checked><span>達成する</span></label>
         <label class="radio"><input type="radio" name="outcome" value="lose"><span>失敗する</span></label>
-      </div>
-
-      <div class="demopanel__group">
-        <p class="demopanel__cap">賭場の見た目</p>
-        <div class="demopanel__jump">
-          <button class="dbtn dbtn--s skinbtn" data-skin-pick="plain">素</button>
-          <button class="dbtn dbtn--s skinbtn" data-skin-pick="board">出走表</button>
-          <button class="dbtn dbtn--s skinbtn" data-skin-pick="card">賭札</button>
-          <button class="dbtn dbtn--s skinbtn" data-skin-pick="ticker">掲示板</button>
-        </div>
       </div>
 
       <div class="demopanel__group">
@@ -275,69 +295,6 @@
     </aside>
 
   </div><!-- /.stage__body -->
-
-  <!-- ================= 賭場デザインの比較 ================= -->
-  <section class="cmp">
-    <div class="cmp__head">
-      <h2 class="h-3">賭場の見た目：4案</h2>
-      <p class="cmp__note">
-        同じデータ・同じHTMLをCSSだけで作り分けている。横スクロールで4案を見比べて、
-        「この案にする」を押すと上の端末へ反映されるよ。
-      </p>
-    </div>
-
-    <div class="cmp__rail">
-
-      <div class="cmp__item" data-skin="plain">
-        <div class="cmp__label">
-          <p class="cmp__name">A. 素</p>
-          <p class="cmp__desc">今の状態。情報は最小限で、行が並ぶだけ。比較の基準線</p>
-        </div>
-        <div class="cmp__frame">
-          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
-          <ul class="floor__list"></ul>
-        </div>
-        <button class="dbtn cmp__adopt" data-skin-pick="plain">この案にする</button>
-      </div>
-
-      <div class="cmp__item" data-skin="board">
-        <div class="cmp__label">
-          <p class="cmp__name">B. 出走表</p>
-          <p class="cmp__desc">競馬の出馬表。ゼッケン番号・支持率バー・大きな倍率で、数字を主役にする</p>
-        </div>
-        <div class="cmp__frame">
-          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
-          <ul class="floor__list"></ul>
-        </div>
-        <button class="dbtn cmp__adopt" data-skin-pick="board">この案にする</button>
-      </div>
-
-      <div class="cmp__item" data-skin="card">
-        <div class="cmp__label">
-          <p class="cmp__name">C. 賭札</p>
-          <p class="cmp__desc">1件を1枚の札に。金枠と参加人数で「場に人がいる」感じを出す</p>
-        </div>
-        <div class="cmp__frame">
-          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
-          <ul class="floor__list"></ul>
-        </div>
-        <button class="dbtn cmp__adopt" data-skin-pick="card">この案にする</button>
-      </div>
-
-      <div class="cmp__item" data-skin="ticker">
-        <div class="cmp__label">
-          <p class="cmp__name">D. 掲示板</p>
-          <p class="cmp__desc">黒地にアンバーのLED。オッズ画面と完全に揃えて、場内モニタに見せる</p>
-        </div>
-        <div class="cmp__frame">
-          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
-          <ul class="floor__list"></ul>
-        </div>
-        <button class="dbtn cmp__adopt" data-skin-pick="ticker">この案にする</button>
-      </div>
-
-    </div>
-  </section>
 
   <!-- 画面遷移の全体図 -->
   <section class="flowmap">

@@ -250,6 +250,32 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .rule{ border:0; border-top:1.5px solid #2A2A2C; margin:var(--s-5) 0 var(--s-3); }
 .odds__whisper{ font-size:12px; color:var(--dust); margin:0; }
 
+/* ---------- 日誌（自分の1日1回コメント） ---------- */
+.journal{ margin-top:var(--s-6); border-top:1.5px solid #2A2A2C; padding-top:var(--s-4); }
+.journal__head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:var(--s-2); }
+.journal__cap{ font-size:12px; letter-spacing:0.12em; color:var(--gold); }
+.journal__day{ font-family:"Inter"; font-size:12px; color:var(--dust); }
+
+#journal-compose textarea{
+  width:100%; font:inherit; font-size:14px; color:var(--chalk);
+  background:#0A0A0B; border:1.5px solid var(--gold-dim); border-radius:0;
+  padding:var(--s-2); resize:none; margin-bottom:var(--s-2);
+}
+#journal-compose textarea:focus{ outline:2px solid var(--amber); outline-offset:1px; }
+#journal-compose .btn{ margin-top:0; }
+
+.journal__posted{
+  font-size:13px; color:var(--gold); border:1.5px dashed var(--gold-dim);
+  padding:var(--s-2) var(--s-3); margin:0 0 var(--s-3);
+}
+
+.journal__log{ list-style:none; margin:var(--s-4) 0 0; padding:0; }
+.journal__entry{ border-top:1.5px solid #2A2A2C; padding:var(--s-2) 0; }
+.journal__entry-day{ font-family:"Inter"; font-size:11px; color:var(--gold-dim); }
+.journal__entry-text{ font-size:14px; margin:var(--s-1) 0; color:var(--chalk); }
+.journal__entry-reactions{ font-size:12px; color:var(--dust); margin:0; min-height:1em; }
+.journal__empty{ font-size:12px; color:var(--dust); padding:var(--s-2) 0; }
+
 /* ============================================================
    賭場 — カジノテーブル
    ============================================================ */
@@ -298,126 +324,79 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 
 .floor__done{ font-size:12px; color:var(--gold); margin:var(--s-2) 0 0; }
 
-/* 案ごとに使う要素。既定では畳んでおき、必要なスキンだけが出す */
-.floor__no, .floor__support, .floor__ratio, .floor__heads{ display:none; }
+/* 本人の日誌を開くボタン。4スキン共通（機能チロムなのでスキンごとに変えない）。
+   フェルト緑にも黒地にも乗るよう、半透明の黒地＋金枠にしておく */
+.floor__thread{
+  display:flex; align-items:center; justify-content:center; gap:var(--s-1);
+  width:100%; margin-top:var(--s-2);
+  border:1.5px solid var(--gold-dim); background:rgba(0,0,0,.3);
+  color:var(--dust); padding:var(--s-2); font-size:12px;
+}
+.floor__thread:hover{ border-color:var(--gold); color:var(--gold); }
+.floor__thread b{ font-family:"Inter"; color:var(--amber); font-weight:700; }
+
 .floor__support{ height:6px; background:var(--lose); margin:0 0 var(--s-1); }
 .floor__support i{ display:block; height:100%; background:var(--win); }
-.floor__ratio{ font-size:12px; color:var(--dust); margin:0 0 var(--s-2); font-family:"Inter"; }
 
 /* ============================================================
-   賭場の見た目：4案（同じHTMLをCSSだけで作り分ける）
-   [data-skin] は端末側 #floor-view と、比較エリアの .cmp__item の両方に付く
+   賭場の見た目：C案「賭札」を採用（#floor-view の data-skin="card"）
+   比較用に並べていた他の3案（素／出走表／掲示板）は削除済み。
    ============================================================ */
 
-/* --- A. 素：情報を最小限に。比較の基準線 --- */
-[data-skin="plain"] .floor__pot::after{ content:" が賭けられています"; }
-
-/* --- B. 出走表：ゼッケン番号・支持率バー・大きな倍率 --- */
-[data-skin="board"] .floor__item{
-  display:grid; grid-template-columns:36px 1fr; gap:0 var(--s-3);
-  padding:var(--s-3) var(--s-4);
-}
-[data-skin="board"] .floor__item:nth-child(odd){ background:rgba(0,0,0,.18); }
-[data-skin="board"] .floor__no{
-  display:flex; align-items:center; justify-content:center;
-  grid-row:1 / span 2; align-self:start;
-  width:36px; height:36px; margin-top:var(--s-1);
-  border:1.5px solid var(--gold); color:var(--gold);
-  font-family:"Inter"; font-size:16px; font-weight:700;
-}
-[data-skin="board"] .floor__who,
-[data-skin="board"] .floor__text,
-[data-skin="board"] .floor__support,
-[data-skin="board"] .floor__ratio,
-[data-skin="board"] .floor__meta,
-[data-skin="board"] .floor__acts,
-[data-skin="board"] .floor__done{ grid-column:2; }
-[data-skin="board"] .floor__support{ display:block; height:8px; border:1px solid rgba(0,0,0,.4); }
-[data-skin="board"] .floor__ratio{ display:block; }
-[data-skin="board"] .floor__heads{ display:inline; }
-[data-skin="board"] .floor__text{ font-size:17px; }
-/* 横並びにすると「無理でしょ」が折り返すので、必ず nowrap で詰める */
-[data-skin="board"] .bet,
-[data-skin="ticker"] .bet{
-  flex-direction:row; justify-content:space-between; align-items:center;
-  gap:var(--s-1); padding:var(--s-2); font-size:13px; white-space:nowrap;
-}
-[data-skin="board"] .bet .floor__odds,
-[data-skin="ticker"] .bet .floor__odds{ font-size:16px; letter-spacing:-0.02em; }
-
-/* --- C. 賭札：1件を1枚の札に --- */
+/* --- 賭札：1件を1枚の札に ---
+   角0の原則は保ったまま、四隅を45°で面取りして「券」の形にする。
+   角丸にしないのは、他スキンも端末フレームも角が立っているため。
+   枠線は border ではなく「地＝金／::before＝札の面」の二枚重ねで作る。
+   clip-path は border を斜めに切ってくれないので、この作り方でないと
+   面取りした辺だけ金線が消える。 */
 [data-skin="card"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
+
 [data-skin="card"] .floor__item{
-  border:1.5px solid var(--gold); border-bottom:1.5px solid var(--gold);
-  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.35) 60%);
-  padding:var(--s-3); margin-bottom:var(--s-3);
-  position:relative;
+  --notch:14px;   /* 面取りの深さ */
+  --edge:1.5px;   /* 金線の太さ。他の線と揃える */
+
+  position:relative; z-index:0;   /* ::before を -1 に置くための文脈 */
+  border:0;
+  background:var(--gold);         /* はみ出したぶんが枠線に見える */
+  clip-path:polygon(
+    var(--notch) 0, calc(100% - var(--notch)) 0,
+    100% var(--notch), 100% calc(100% - var(--notch)),
+    calc(100% - var(--notch)) 100%, var(--notch) 100%,
+    0 calc(100% - var(--notch)), 0 var(--notch));
+  /* 左だけ広いのはミシン目のぶん */
+  padding:var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  margin-bottom:var(--s-3);
 }
+/* 札の面。金の地から --edge だけ内側に置く */
+[data-skin="card"] .floor__item::before{
+  content:""; position:absolute; inset:var(--edge); z-index:-1;
+  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.35) 60%), var(--felt);
+  clip-path:inherit;
+}
+/* ミシン目。半券を切り離す線 */
+[data-skin="card"] .floor__item::after{
+  content:""; position:absolute; z-index:-1;
+  left:calc(var(--s-3) - 5px); top:var(--notch); bottom:var(--notch); width:2px;
+  background:repeating-linear-gradient(
+    to bottom, var(--gold-dim) 0 4px, transparent 4px 10px);
+}
+
 [data-skin="card"] .floor__no{
-  display:block; position:absolute; top:var(--s-2); right:var(--s-3);
-  font-family:"Inter"; font-size:32px; font-weight:700; color:rgba(201,162,39,.35);
+  display:block; position:absolute; top:var(--s-3); right:var(--s-3);
+  font-family:"Inter"; font-size:30px; font-weight:700; color:rgba(201,162,39,.35);
   line-height:1;
 }
 [data-skin="card"] .floor__who{ color:var(--gold); letter-spacing:0.08em; }
 [data-skin="card"] .floor__text{ font-size:18px; padding-right:var(--s-5); }
 [data-skin="card"] .floor__heads{ display:inline; color:var(--gold); }
-[data-skin="card"] .floor__meta{
-  border-top:1.5px solid rgba(201,162,39,.35); border-bottom:1.5px solid rgba(201,162,39,.35);
-  padding:var(--s-2) 0; margin-bottom:var(--s-3);
+/* 罫線は「券面 ／ 半券」を切る1本だけ。券の中に箱を積み重ねない。
+   支持率バーのすぐ下に置くと二重線に見えるので、賭けボタンの上に置く */
+[data-skin="card"] .floor__meta{ border:0; padding:0; margin-bottom:var(--s-2); }
+[data-skin="card"] .floor__acts{
+  border-top:1.5px dashed rgba(201,162,39,.35);
+  padding-top:var(--s-3);
 }
-[data-skin="card"] .floor__support{ display:block; }
-
-/* --- D. 掲示板：場内モニタ。オッズ画面と完全に揃える --- */
-[data-skin="ticker"].view--floor,
-[data-skin="ticker"] .cmp__frame{ background:#000; }
-[data-skin="ticker"] .view--floor::before,
-[data-skin="ticker"]::before{ display:none; }
-[data-skin="ticker"] .floor__head{ background:#000; border-bottom:1.5px solid var(--amber); }
-[data-skin="ticker"] .floor__item{
-  display:grid; grid-template-columns:auto 1fr auto; gap:0 var(--s-3);
-  align-items:baseline;
-  border-bottom:1.5px solid #24211A; padding:var(--s-3) var(--s-4);
-  background:#000;
-}
-[data-skin="ticker"] .floor__no{
-  display:block; font-family:"Inter"; font-size:14px; font-weight:700;
-  color:var(--amber); text-shadow:0 0 8px rgba(255,177,0,.7);
-}
-[data-skin="ticker"] .floor__who{ grid-column:3; grid-row:1; margin:0; text-align:right; color:var(--gold-dim); }
-[data-skin="ticker"] .floor__text{
-  grid-column:2; grid-row:1; margin:0;
-  color:var(--amber); text-shadow:0 0 8px rgba(255,177,0,.45);
-  font-weight:500; letter-spacing:0.02em;
-}
-[data-skin="ticker"] .floor__meta{ grid-column:2 / span 2; margin:var(--s-2) 0; color:var(--gold-dim); }
-[data-skin="ticker"] .floor__heads{ display:inline; }
-[data-skin="ticker"] .floor__acts{ grid-column:2 / span 2; }
-[data-skin="ticker"] .floor__done{ grid-column:2 / span 2; }
-[data-skin="ticker"] .bet{ background:#0A0A0B; }
-
-/* ============================================================
-   賭場デザインの比較エリア（端末の外・実UIではない）
-   ============================================================ */
-.cmp{ margin-top:var(--s-7); border-top:1.5px solid var(--gold-dim); padding-top:var(--s-4); }
-.cmp__note{ font-size:12px; color:var(--dust); margin:var(--s-2) 0 var(--s-4); max-width:70ch; }
-
-/* 4案を実寸で並べる。横スクロール自体がこの領域の機能 */
-.cmp__rail{ display:flex; gap:var(--s-4); overflow-x:auto; padding-bottom:var(--s-3); }
-.cmp__item{ flex:0 0 390px; }
-.cmp__name{ font-size:16px; font-weight:700; margin:0; color:var(--gold); }
-.cmp__desc{ font-size:12px; color:var(--dust); margin:var(--s-1) 0 var(--s-2); min-height:48px; }
-
-.cmp__frame{
-  height:520px; overflow:hidden; position:relative;
-  border:1.5px solid var(--gold-dim); background:var(--felt);
-}
-.cmp__frame > *{ pointer-events:none; }   /* 見比べ専用。ここからは賭けられない */
-.cmp__item.is-chosen .cmp__frame{
-  border-color:var(--amber); box-shadow:0 0 28px rgba(255,177,0,.28);
-}
-.cmp__item.is-chosen .cmp__adopt{ border-color:var(--amber); color:var(--amber); }
-.cmp__item.is-chosen .cmp__adopt::after{ content:"（採用中）"; }
-.cmp__adopt{ margin-top:var(--s-2); }
+[data-skin="card"] .floor__support{ display:block; margin-bottom:var(--s-2); }
 
 /* ---------- 証拠提出 ---------- */
 .dropzone{
@@ -468,6 +447,47 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 .tab + .tab{ border-left:1.5px solid var(--gold-dim); }
 .tab.is-on{ color:var(--amber); text-shadow:0 0 12px rgba(255,177,0,.7); }
+
+/* ============================================================
+   スレッド（賭場カード1件の日誌）— dialog
+   一覧の直下へ詳細を積まない原則を守り、賭場一覧とは別面（dialog）に分離する
+   ============================================================ */
+.thread-dialog{
+  width:min(390px, 92vw); max-height:80vh;
+  border:2px solid var(--gold); border-radius:0; padding:0;
+  background:var(--board); color:var(--chalk);
+}
+.thread-dialog::backdrop{ background:rgba(0,0,0,.72); }
+
+.thread-dialog__head{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:var(--s-3); padding:var(--s-4); border-bottom:1.5px solid var(--gold-dim);
+  position:sticky; top:0; background:var(--board);
+}
+.thread-dialog__who{ font-family:"Inter"; font-size:12px; color:var(--gold-dim); margin:0; }
+.thread-dialog__text{ font-size:16px; font-weight:700; margin:var(--s-1) 0 0; }
+.thread-dialog__close{
+  border:1.5px solid var(--gold-dim); background:transparent; color:var(--dust);
+  width:32px; height:32px; flex:0 0 auto; font-size:16px; line-height:1;
+}
+.thread-dialog__close:hover{ border-color:var(--gold); color:var(--gold); }
+
+.thread-dialog__list{ list-style:none; margin:0; padding:var(--s-2) var(--s-4) var(--s-4); overflow-y:auto; }
+.thread-item{ border-top:1.5px solid #2A2A2C; padding:var(--s-3) 0; }
+.thread-item:first-child{ border-top:0; }
+.thread-item__day{ font-family:"Inter"; font-size:11px; color:var(--gold-dim); margin:0; }
+.thread-item__text{ font-size:15px; margin:var(--s-1) 0 var(--s-2); color:var(--chalk); }
+.thread-empty{ font-size:12px; color:var(--dust); padding:var(--s-3) 0; }
+
+.thread-item__reactions{ display:flex; flex-wrap:wrap; gap:var(--s-1); }
+.reaction{
+  border:1.5px solid var(--gold-dim); background:transparent; color:var(--dust);
+  padding:var(--s-1) var(--s-2); font-size:12px;
+  display:flex; align-items:center; gap:var(--s-1);
+}
+.reaction b{ font-family:"Inter"; font-weight:700; color:inherit; }
+.reaction.is-picked{ background:var(--amber); border-color:var(--amber); color:#1A1405; }
+.reaction:hover:not(.is-picked){ border-color:var(--gold); color:var(--gold); }
 
 /* ---------- デモ操作パネル ---------- */
 .demopanel{ border:1.5px solid var(--gold-dim); padding:var(--s-4); background:#0E0F10; }
