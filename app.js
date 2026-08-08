@@ -20,6 +20,7 @@ const state = {
   },
 
   lastOdds: null,   // 前回表示した倍率。変動の矢印を出すために持つ
+  floorSkin: 'board',  // 賭場の見た目。plain / board / card / ticker
 
   // 観客としての手持ち
   pt: 1200,
@@ -169,34 +170,59 @@ function updateFormula(){
 }
 
 // ---------- 賭場 ----------
+// 1行分のHTML。4つの見た目案はすべてこの同じマークアップをCSSで作り分ける。
+// （案ごとにDOMを分けると、どの差が本当にデザインの差なのか分からなくなるため）
+function floorItemHTML(item, i){
+  const total = item.poolDo + item.poolNo;
+  const oDo   = odds(item.poolDo, item.poolNo).toFixed(2);
+  const oNo   = odds(item.poolNo, item.poolDo).toFixed(2);
+  const supportDo = item.poolDo / total * 100;
+  const heads = Math.round(total / BET_UNIT);      // 賭けている人数の目安
+  const done  = item.myBet !== null;
+  const dead  = state.betsLeft <= 0 && !done;
+
+  return `
+    <li class="floor__item">
+      <span class="floor__no">${String(i + 1).padStart(2, '0')}</span>
+      <p class="floor__who">${item.who}</p>
+      <p class="floor__text">${item.text}</p>
+
+      <div class="floor__support" aria-hidden="true"><i style="width:${supportDo.toFixed(1)}%"></i></div>
+      <p class="floor__ratio">やる ${Math.round(supportDo)}%　—　無理でしょ ${100 - Math.round(supportDo)}%</p>
+
+      <div class="floor__meta">
+        <span class="floor__time">${item.hoursLeft > 0 ? '残り ' + fmtTime(item.hoursLeft) : '締切'}</span>
+        <span class="floor__pot">${total.toLocaleString()}pt</span>
+        <span class="floor__heads">${heads}人が参加</span>
+      </div>
+
+      <div class="floor__acts">
+        <button class="bet bet--do ${item.myBet==='do'?'is-picked':''}"
+                data-bet="do" data-id="${item.id}" ${done||dead?'disabled':''}>
+          やる<b class="floor__odds">${oDo}倍</b></button>
+        <button class="bet bet--no ${item.myBet==='no'?'is-picked':''}"
+                data-bet="no" data-id="${item.id}" ${done||dead?'disabled':''}>
+          無理でしょ<b class="floor__odds">${oNo}倍</b></button>
+      </div>
+      ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
+    </li>`;
+}
+
 function renderFloor(){
   $('#bet-left').textContent = state.betsLeft;
   $('#pt').textContent = state.pt.toLocaleString();
 
-  $('#floor-list').innerHTML = state.floor.map(item => {
-    const oDo = odds(item.poolDo, item.poolNo).toFixed(2);
-    const oNo = odds(item.poolNo, item.poolDo).toFixed(2);
-    const done = item.myBet !== null;
-    const dead = state.betsLeft <= 0 && !done;
-    return `
-      <li class="floor__item">
-        <p class="floor__who">${item.who}</p>
-        <p class="floor__text">${item.text}</p>
-        <div class="floor__meta">
-          <span>残り ${fmtTime(item.hoursLeft)}</span>
-          <span>${(item.poolDo + item.poolNo).toLocaleString()}pt が賭けられています</span>
-        </div>
-        <div class="floor__acts">
-          <button class="bet bet--do ${item.myBet==='do'?'is-picked':''}"
-                  data-bet="do" data-id="${item.id}" ${done||dead?'disabled':''}>
-            やる<b class="floor__odds">${oDo}倍</b></button>
-          <button class="bet bet--no ${item.myBet==='no'?'is-picked':''}"
-                  data-bet="no" data-id="${item.id}" ${done||dead?'disabled':''}>
-            無理でしょ<b class="floor__odds">${oNo}倍</b></button>
-        </div>
-        ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
-      </li>`;
-  }).join('');
+  const html = state.floor.map(floorItemHTML).join('');
+  // 端末の中の賭場と、下の比較エリア4つを同じデータで描く
+  $$('.floor__list').forEach(ul => { ul.innerHTML = html; });
+}
+
+// 賭場の見た目を切り替える
+function setFloorSkin(skin){
+  state.floorSkin = skin;
+  $('#floor-view').dataset.skin = skin;
+  $$('.cmp__item').forEach(el => el.classList.toggle('is-chosen', el.dataset.skin === skin));
+  $$('.skinbtn').forEach(b => b.classList.toggle('is-on', b.dataset.skinPick === skin));
 }
 
 function placeBet(id, side){
@@ -270,6 +296,14 @@ document.addEventListener('click', (e) => {
 
   const bet = e.target.closest('.bet');
   if (bet){ placeBet(Number(bet.dataset.id), bet.dataset.bet); return; }
+
+  // 見た目の切り替え（デモパネル／比較エリアの採用ボタン）
+  const skin = e.target.closest('[data-skin-pick]');
+  if (skin){
+    setFloorSkin(skin.dataset.skinPick);
+    if (skin.classList.contains('cmp__adopt')) show('floor');
+    return;
+  }
 });
 
 // 宣言 → 審査
@@ -357,4 +391,6 @@ $('#d-reset').addEventListener('click', () => {
 
 // ---------- 起動 ----------
 updateFormula();
+renderFloor();              // 比較エリアも最初から埋めておく
+setFloorSkin(state.floorSkin);
 show('empty');

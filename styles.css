@@ -298,6 +298,127 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 
 .floor__done{ font-size:12px; color:var(--gold); margin:var(--s-2) 0 0; }
 
+/* 案ごとに使う要素。既定では畳んでおき、必要なスキンだけが出す */
+.floor__no, .floor__support, .floor__ratio, .floor__heads{ display:none; }
+.floor__support{ height:6px; background:var(--lose); margin:0 0 var(--s-1); }
+.floor__support i{ display:block; height:100%; background:var(--win); }
+.floor__ratio{ font-size:12px; color:var(--dust); margin:0 0 var(--s-2); font-family:"Inter"; }
+
+/* ============================================================
+   賭場の見た目：4案（同じHTMLをCSSだけで作り分ける）
+   [data-skin] は端末側 #floor-view と、比較エリアの .cmp__item の両方に付く
+   ============================================================ */
+
+/* --- A. 素：情報を最小限に。比較の基準線 --- */
+[data-skin="plain"] .floor__pot::after{ content:" が賭けられています"; }
+
+/* --- B. 出走表：ゼッケン番号・支持率バー・大きな倍率 --- */
+[data-skin="board"] .floor__item{
+  display:grid; grid-template-columns:36px 1fr; gap:0 var(--s-3);
+  padding:var(--s-3) var(--s-4);
+}
+[data-skin="board"] .floor__item:nth-child(odd){ background:rgba(0,0,0,.18); }
+[data-skin="board"] .floor__no{
+  display:flex; align-items:center; justify-content:center;
+  grid-row:1 / span 2; align-self:start;
+  width:36px; height:36px; margin-top:var(--s-1);
+  border:1.5px solid var(--gold); color:var(--gold);
+  font-family:"Inter"; font-size:16px; font-weight:700;
+}
+[data-skin="board"] .floor__who,
+[data-skin="board"] .floor__text,
+[data-skin="board"] .floor__support,
+[data-skin="board"] .floor__ratio,
+[data-skin="board"] .floor__meta,
+[data-skin="board"] .floor__acts,
+[data-skin="board"] .floor__done{ grid-column:2; }
+[data-skin="board"] .floor__support{ display:block; height:8px; border:1px solid rgba(0,0,0,.4); }
+[data-skin="board"] .floor__ratio{ display:block; }
+[data-skin="board"] .floor__heads{ display:inline; }
+[data-skin="board"] .floor__text{ font-size:17px; }
+/* 横並びにすると「無理でしょ」が折り返すので、必ず nowrap で詰める */
+[data-skin="board"] .bet,
+[data-skin="ticker"] .bet{
+  flex-direction:row; justify-content:space-between; align-items:center;
+  gap:var(--s-1); padding:var(--s-2); font-size:13px; white-space:nowrap;
+}
+[data-skin="board"] .bet .floor__odds,
+[data-skin="ticker"] .bet .floor__odds{ font-size:16px; letter-spacing:-0.02em; }
+
+/* --- C. 賭札：1件を1枚の札に --- */
+[data-skin="card"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
+[data-skin="card"] .floor__item{
+  border:1.5px solid var(--gold); border-bottom:1.5px solid var(--gold);
+  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.35) 60%);
+  padding:var(--s-3); margin-bottom:var(--s-3);
+  position:relative;
+}
+[data-skin="card"] .floor__no{
+  display:block; position:absolute; top:var(--s-2); right:var(--s-3);
+  font-family:"Inter"; font-size:32px; font-weight:700; color:rgba(201,162,39,.35);
+  line-height:1;
+}
+[data-skin="card"] .floor__who{ color:var(--gold); letter-spacing:0.08em; }
+[data-skin="card"] .floor__text{ font-size:18px; padding-right:var(--s-5); }
+[data-skin="card"] .floor__heads{ display:inline; color:var(--gold); }
+[data-skin="card"] .floor__meta{
+  border-top:1.5px solid rgba(201,162,39,.35); border-bottom:1.5px solid rgba(201,162,39,.35);
+  padding:var(--s-2) 0; margin-bottom:var(--s-3);
+}
+[data-skin="card"] .floor__support{ display:block; }
+
+/* --- D. 掲示板：場内モニタ。オッズ画面と完全に揃える --- */
+[data-skin="ticker"].view--floor,
+[data-skin="ticker"] .cmp__frame{ background:#000; }
+[data-skin="ticker"] .view--floor::before,
+[data-skin="ticker"]::before{ display:none; }
+[data-skin="ticker"] .floor__head{ background:#000; border-bottom:1.5px solid var(--amber); }
+[data-skin="ticker"] .floor__item{
+  display:grid; grid-template-columns:auto 1fr auto; gap:0 var(--s-3);
+  align-items:baseline;
+  border-bottom:1.5px solid #24211A; padding:var(--s-3) var(--s-4);
+  background:#000;
+}
+[data-skin="ticker"] .floor__no{
+  display:block; font-family:"Inter"; font-size:14px; font-weight:700;
+  color:var(--amber); text-shadow:0 0 8px rgba(255,177,0,.7);
+}
+[data-skin="ticker"] .floor__who{ grid-column:3; grid-row:1; margin:0; text-align:right; color:var(--gold-dim); }
+[data-skin="ticker"] .floor__text{
+  grid-column:2; grid-row:1; margin:0;
+  color:var(--amber); text-shadow:0 0 8px rgba(255,177,0,.45);
+  font-weight:500; letter-spacing:0.02em;
+}
+[data-skin="ticker"] .floor__meta{ grid-column:2 / span 2; margin:var(--s-2) 0; color:var(--gold-dim); }
+[data-skin="ticker"] .floor__heads{ display:inline; }
+[data-skin="ticker"] .floor__acts{ grid-column:2 / span 2; }
+[data-skin="ticker"] .floor__done{ grid-column:2 / span 2; }
+[data-skin="ticker"] .bet{ background:#0A0A0B; }
+
+/* ============================================================
+   賭場デザインの比較エリア（端末の外・実UIではない）
+   ============================================================ */
+.cmp{ margin-top:var(--s-7); border-top:1.5px solid var(--gold-dim); padding-top:var(--s-4); }
+.cmp__note{ font-size:12px; color:var(--dust); margin:var(--s-2) 0 var(--s-4); max-width:70ch; }
+
+/* 4案を実寸で並べる。横スクロール自体がこの領域の機能 */
+.cmp__rail{ display:flex; gap:var(--s-4); overflow-x:auto; padding-bottom:var(--s-3); }
+.cmp__item{ flex:0 0 390px; }
+.cmp__name{ font-size:16px; font-weight:700; margin:0; color:var(--gold); }
+.cmp__desc{ font-size:12px; color:var(--dust); margin:var(--s-1) 0 var(--s-2); min-height:48px; }
+
+.cmp__frame{
+  height:520px; overflow:hidden; position:relative;
+  border:1.5px solid var(--gold-dim); background:var(--felt);
+}
+.cmp__frame > *{ pointer-events:none; }   /* 見比べ専用。ここからは賭けられない */
+.cmp__item.is-chosen .cmp__frame{
+  border-color:var(--amber); box-shadow:0 0 28px rgba(255,177,0,.28);
+}
+.cmp__item.is-chosen .cmp__adopt{ border-color:var(--amber); color:var(--amber); }
+.cmp__item.is-chosen .cmp__adopt::after{ content:"（採用中）"; }
+.cmp__adopt{ margin-top:var(--s-2); }
+
 /* ---------- 証拠提出 ---------- */
 .dropzone{
   border:1.5px dashed var(--gold-dim); background:#0A0A0B;

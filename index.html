@@ -166,7 +166,7 @@
         </section>
 
         <!-- ---------- 賭場（観客） ---------- -->
-        <section class="view view--floor" data-view="floor">
+        <section class="view view--floor" data-view="floor" id="floor-view" data-skin="board">
           <div class="floor__head">
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
@@ -245,6 +245,16 @@
       </div>
 
       <div class="demopanel__group">
+        <p class="demopanel__cap">賭場の見た目</p>
+        <div class="demopanel__jump">
+          <button class="dbtn dbtn--s skinbtn" data-skin-pick="plain">素</button>
+          <button class="dbtn dbtn--s skinbtn" data-skin-pick="board">出走表</button>
+          <button class="dbtn dbtn--s skinbtn" data-skin-pick="card">賭札</button>
+          <button class="dbtn dbtn--s skinbtn" data-skin-pick="ticker">掲示板</button>
+        </div>
+      </div>
+
+      <div class="demopanel__group">
         <p class="demopanel__cap">画面へ直接飛ぶ</p>
         <div class="demopanel__jump">
           <button class="dbtn dbtn--s" data-go="empty">空</button>
@@ -265,6 +275,69 @@
     </aside>
 
   </div><!-- /.stage__body -->
+
+  <!-- ================= 賭場デザインの比較 ================= -->
+  <section class="cmp">
+    <div class="cmp__head">
+      <h2 class="h-3">賭場の見た目：4案</h2>
+      <p class="cmp__note">
+        同じデータ・同じHTMLをCSSだけで作り分けている。横スクロールで4案を見比べて、
+        「この案にする」を押すと上の端末へ反映されるよ。
+      </p>
+    </div>
+
+    <div class="cmp__rail">
+
+      <div class="cmp__item" data-skin="plain">
+        <div class="cmp__label">
+          <p class="cmp__name">A. 素</p>
+          <p class="cmp__desc">今の状態。情報は最小限で、行が並ぶだけ。比較の基準線</p>
+        </div>
+        <div class="cmp__frame">
+          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
+          <ul class="floor__list"></ul>
+        </div>
+        <button class="dbtn cmp__adopt" data-skin-pick="plain">この案にする</button>
+      </div>
+
+      <div class="cmp__item" data-skin="board">
+        <div class="cmp__label">
+          <p class="cmp__name">B. 出走表</p>
+          <p class="cmp__desc">競馬の出馬表。ゼッケン番号・支持率バー・大きな倍率で、数字を主役にする</p>
+        </div>
+        <div class="cmp__frame">
+          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
+          <ul class="floor__list"></ul>
+        </div>
+        <button class="dbtn cmp__adopt" data-skin-pick="board">この案にする</button>
+      </div>
+
+      <div class="cmp__item" data-skin="card">
+        <div class="cmp__label">
+          <p class="cmp__name">C. 賭札</p>
+          <p class="cmp__desc">1件を1枚の札に。金枠と参加人数で「場に人がいる」感じを出す</p>
+        </div>
+        <div class="cmp__frame">
+          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
+          <ul class="floor__list"></ul>
+        </div>
+        <button class="dbtn cmp__adopt" data-skin-pick="card">この案にする</button>
+      </div>
+
+      <div class="cmp__item" data-skin="ticker">
+        <div class="cmp__label">
+          <p class="cmp__name">D. 掲示板</p>
+          <p class="cmp__desc">黒地にアンバーのLED。オッズ画面と完全に揃えて、場内モニタに見せる</p>
+        </div>
+        <div class="cmp__frame">
+          <div class="floor__head"><h2 class="h-3">賭場</h2><p class="floor__credit">残り <b>3</b> 回</p></div>
+          <ul class="floor__list"></ul>
+        </div>
+        <button class="dbtn cmp__adopt" data-skin-pick="ticker">この案にする</button>
+      </div>
+
+    </div>
+  </section>
 
   <!-- 画面遷移の全体図 -->
   <section class="flowmap">
