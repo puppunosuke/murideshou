@@ -38,6 +38,7 @@ const state = {
   lastOdds: null,   // 前回表示した倍率。変動の矢印を出すために持つ
   day: 4,              // 通し日数。日誌の「1日1回」制限の基準
   threadFor: null,     // 今スレッドを開いている賭場カードのid
+  density: 'loose',    // 賭場の札の大きさ。loose / normal / tight
 
   // 観客としての手持ち
   pt: 1200,
@@ -156,6 +157,8 @@ function renderOdds(){
   $('#odds-time').textContent = fmtTime(m.hoursLeft);
   $('#odds-judge').disabled = false;
   $('#odds-judge').textContent = m.hoursLeft > 0 ? '証拠を出す' : '証拠を出す（締切）';
+  // 締切が来たら証拠提出を日誌より上へ繰り上げる（CSSの order で並べ替える）
+  $('.view--odds').classList.toggle('is-due', m.hoursLeft <= 0);
 
   countUp($('#odds-value'), value);
   updateFormula();
@@ -170,6 +173,11 @@ function renderJournal(){
   $('#journal-done').hidden = !postedToday;
 
   const sorted = [...state.mine.comments].sort((a, b) => b.day - a.day);
+
+  // 過去ログは畳んだまま。0件なら見出しごと出さない
+  $('#journal-past').hidden = sorted.length === 0;
+  $('#journal-count').textContent = sorted.length;
+
   $('#journal-log').innerHTML = sorted.map(c => `
     <li class="journal__entry">
       <span class="journal__entry-day">Day ${c.day}</span>
@@ -177,7 +185,7 @@ function renderJournal(){
       <p class="journal__entry-reactions">${REACTIONS.map(r =>
         c.reactions[r.id] > 0 ? `${r.label} ${c.reactions[r.id]}` : ''
       ).filter(Boolean).join('　')}</p>
-    </li>`).join('') || '<li class="journal__empty">まだ何も書いていない</li>';
+    </li>`).join('');
 }
 
 function postJournal(){
@@ -190,6 +198,7 @@ function postJournal(){
 }
 
 // ---------- 賭場カードのスレッド（他人の日誌への反応） ----------
+// 端末フレームの中に収めたいので <dialog> は使わず、.phone 内のシートを出し入れする
 function openThread(itemId){
   const item = state.floor.find(x => x.id === itemId);
   if (!item) return;
@@ -197,8 +206,16 @@ function openThread(itemId){
   $('#thread-who').textContent = item.who;
   $('#thread-declare').textContent = item.text;
   renderThread();
-  $('#thread-dialog').showModal();
+  $('#thread-sheet').hidden = false;
+  $('#thread-close').focus();
 }
+
+function closeThread(){
+  $('#thread-sheet').hidden = true;
+  state.threadFor = null;
+}
+
+const threadIsOpen = () => !$('#thread-sheet').hidden;
 
 function renderThread(){
   const item = state.floor.find(x => x.id === state.threadFor);
@@ -290,6 +307,11 @@ function floorItemHTML(item, i){
   const done  = item.myBet !== null;
   const dead  = state.betsLeft <= 0 && !done;
 
+  // 最新の日誌を1行だけ札に載せる。開かなくても場の空気が伝わるように
+  const latest = item.comments.length
+    ? [...item.comments].sort((a, b) => b.day - a.day)[0]
+    : null;
+
   return `
     <li class="floor__item">
       <span class="floor__no">${String(i + 1).padStart(2, '0')}</span>
@@ -314,10 +336,27 @@ function floorItemHTML(item, i){
       </div>
       ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
 
+      ${latest ? `<p class="floor__latest">
+        <span class="floor__latest-day">Day ${latest.day}</span>${escapeHtml(latest.text)}</p>` : ''}
+
       <button class="floor__thread" data-thread-open="${item.id}">
         本人の日誌を読む<b>${item.comments.length}</b>
       </button>
     </li>`;
+}
+
+// 賭場の密度（札の大きさ）を切り替える。見た目はCSSの [data-density] が作る
+const DENSITY_HINT = {
+  loose:  'ゆったり：券の面を広く取る。1画面に約2.5枚',
+  normal: '標準：余白と文字を1段階詰める。1画面に約3.5枚',
+  tight:  '詰める：面取りを浅くし宣言文を1行に。1画面に約5枚',
+};
+
+function setDensity(d){
+  state.density = d;
+  $('#floor-view').dataset.density = d;
+  $('#dens-hint').textContent = DENSITY_HINT[d] || '';
+  $$('.densbtn').forEach(b => b.classList.toggle('is-on', b.dataset.densityPick === d));
 }
 
 function renderFloor(){
@@ -405,12 +444,20 @@ document.addEventListener('click', (e) => {
   const reactBtn = e.target.closest('.reaction');
   if (reactBtn){ reactTo(Number(reactBtn.dataset.comment), reactBtn.dataset.react); return; }
 
-  if (e.target.closest('#thread-close')){ $('#thread-dialog').close(); return; }
+  if (e.target.closest('#thread-close')){ closeThread(); return; }
+
+  const dens = e.target.closest('[data-density-pick]');
+  if (dens){ setDensity(dens.dataset.densityPick); return; }
 });
 
-// ダイアログの背景（::backdrop相当の外側クリック）で閉じる
-$('#thread-dialog').addEventListener('click', (e) => {
-  if (e.target.id === 'thread-dialog') $('#thread-dialog').close();
+// 背景（シートの外側）クリックで閉じる
+$('#thread-sheet').addEventListener('click', (e) => {
+  if (e.target.id === 'thread-sheet') closeThread();
+});
+
+// Escで閉じる。<dialog> をやめたぶん自前で用意する
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && threadIsOpen()) closeThread();
 });
 
 $('#journal-post').addEventListener('click', postJournal);
@@ -481,6 +528,18 @@ $('#d-time').addEventListener('click', () => {
   if (state.view === 'floor') renderFloor();
 });
 
+$('#d-react').addEventListener('click', () => {
+  // 他人が日誌へ反応してくる。開いているスレッドの数字がその場で増えるのが見せ場
+  const pick = () => REACTIONS[Math.floor(Math.random() * REACTIONS.length)].id;
+  const bump = (c) => { c.reactions[pick()] += Math.floor(Math.random() * 3) + 1; };
+  state.floor.forEach(item => item.comments.forEach(bump));
+  state.mine.comments.forEach(bump);
+
+  if (threadIsOpen())         renderThread();
+  if (state.view === 'odds')  renderJournal();
+  if (state.view === 'floor') renderFloor();
+});
+
 $('#d-day').addEventListener('click', () => {
   // 日誌の「1日1回」をデモで確かめるための日送り。締切やオッズには触らない
   state.day += 1;
@@ -505,11 +564,12 @@ $('#d-reset').addEventListener('click', () => {
   $('#odds-value').textContent = '0';
   state.lastOdds = null;
   $('#odds-delta').textContent = '';
-  if ($('#thread-dialog').open) $('#thread-dialog').close();
+  closeThread();
   show('empty');
 });
 
 // ---------- 起動 ----------
 updateFormula();
+setDensity(state.density);
 renderFloor();
 show('empty');

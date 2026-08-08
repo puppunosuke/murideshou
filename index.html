@@ -157,9 +157,8 @@
             <hr class="rule">
             <p class="odds__whisper">誰がいくら賭けたかは、あなたには見えません。</p>
 
-            <button class="btn btn--fill" id="odds-judge">証拠を出す</button>
-
-            <!-- 日誌：宣言者本人が1日1回だけ書ける。賭場のスレッドとして他人に見られる -->
+            <!-- 日誌：宣言者本人が1日1回だけ書ける。賭場のスレッドとして他人に見られる。
+                 「証拠を出す」は締切まで使わないが日誌は毎日使うので、頻度どおり日誌を上に置く -->
             <div class="journal">
               <div class="journal__head">
                 <span class="journal__cap">今日の日誌</span>
@@ -169,12 +168,18 @@
               <div id="journal-compose">
                 <textarea id="journal-text" rows="2" placeholder="今日の進捗を、正直に書く"></textarea>
                 <button class="btn" id="journal-post">投稿する</button>
-                <p class="note">1日1回まで。賭場であなたのスレッドとして誰でも読める。</p>
+                <p class="note">1日1回まで。賭場で誰でも読める。</p>
               </div>
               <p class="journal__posted" id="journal-done" hidden>今日はもう投稿済み。また明日。</p>
 
-              <ul class="journal__log" id="journal-log"><!-- JSで描画 --></ul>
+              <!-- 過去ログは畳んでおく。日数が増えても投稿欄が押し出されないように -->
+              <details class="journal__past" id="journal-past" hidden>
+                <summary>これまでの日誌<b id="journal-count">0</b></summary>
+                <ul class="journal__log" id="journal-log"><!-- JSで描画 --></ul>
+              </details>
             </div>
+
+            <button class="btn btn--fill" id="odds-judge">証拠を出す</button>
           </div>
 
           <svg class="blob blob--odds" viewBox="0 0 100 100" aria-hidden="true">
@@ -183,7 +188,7 @@
         </section>
 
         <!-- ---------- 賭場（観客） ---------- -->
-        <section class="view view--floor" data-view="floor" id="floor-view" data-skin="card">
+        <section class="view view--floor" data-view="floor" id="floor-view" data-skin="card" data-density="loose">
           <div class="floor__head">
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
@@ -242,17 +247,21 @@
         <button class="tab" data-tab="floor">賭場</button>
       </nav>
 
-      <!-- スレッド：賭場カード1件ぶんの日誌一覧。一覧の直下へ積まず、dialogへ分離する -->
-      <dialog id="thread-dialog" class="thread-dialog">
-        <div class="thread-dialog__head">
-          <div>
-            <p class="thread-dialog__who" id="thread-who">@kenta</p>
-            <p class="thread-dialog__text" id="thread-declare"></p>
+      <!-- スレッド：賭場カード1件ぶんの日誌一覧。一覧の直下へ積まず別面へ分離する。
+           <dialog>+showModal() は top-layer に出て端末フレームの外へはみ出すため、
+           .phone の中に絶対配置したシートとして自前で作る（Esc・背景クリックもJS側） -->
+      <div class="sheet" id="thread-sheet" hidden>
+        <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="thread-declare">
+          <div class="sheet__head">
+            <div>
+              <p class="sheet__who" id="thread-who">@kenta</p>
+              <p class="sheet__text" id="thread-declare"></p>
+            </div>
+            <button class="sheet__close" id="thread-close" aria-label="閉じる">×</button>
           </div>
-          <button class="thread-dialog__close" id="thread-close" aria-label="閉じる">×</button>
+          <ul class="sheet__list" id="thread-list"><!-- JSで描画 --></ul>
         </div>
-        <ul class="thread-dialog__list" id="thread-list"><!-- JSで描画 --></ul>
-      </dialog>
+      </div>
     </div><!-- /.phone -->
 
     <!-- ================= デモ操作パネル（端末の外＝実UIではない） ================= -->
@@ -263,9 +272,20 @@
       <div class="demopanel__group">
         <p class="demopanel__cap">時間と賭けを動かす</p>
         <button class="dbtn" id="d-flow">観客の賭けを流す</button>
+        <button class="dbtn" id="d-react">日誌に反応が付く</button>
         <button class="dbtn" id="d-time">締切まで進める</button>
         <button class="dbtn" id="d-day">次の日にする（日誌が解禁）</button>
         <button class="dbtn" id="d-reset">最初から</button>
+      </div>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">賭場の密度（札の大きさ）</p>
+        <div class="demopanel__jump">
+          <button class="dbtn dbtn--s densbtn" data-density-pick="loose">ゆったり</button>
+          <button class="dbtn dbtn--s densbtn" data-density-pick="normal">標準</button>
+          <button class="dbtn dbtn--s densbtn" data-density-pick="tight">詰める</button>
+        </div>
+        <p class="demopanel__hint" id="dens-hint"></p>
       </div>
 
       <div class="demopanel__group">
