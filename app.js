@@ -1,5 +1,5 @@
 /* ============================================================
-   無理でしょ — プロトタイプの挙動
+   CANBLE — プロトタイプの挙動
    バニラJS・ビルドなし。サーバもAIも繋がない完全モック。
    本番で外部に出す想定の処理には「本番:」コメントを添える。
    ============================================================ */
@@ -29,7 +29,7 @@ const state = {
     text: '今週中にジムへ行く',
     proof: 'ジムでの写真、または位置情報',
     poolDo: 350,   // 「やる」に賭けられた総額
-    poolNo: 850,   // 「無理でしょ」に賭けられた総額
+    poolNo: 850,   // 「やらない」に賭けられた総額
     hoursLeft: 62,
     lastPostDay: 0,   // 最後に日誌を投稿した日。今日と同じなら投稿済み
     comments: [],     // 自分の日誌（宣言者本人が書く、1日1回）
@@ -42,7 +42,9 @@ const state = {
   density: 'loose',    // 賭場の札の大きさ。loose / normal / tight
   table: 'on',         // 卓の背景。前後比較のため off にできる
   propAmount: 100,     // 卓上の小物量。0〜200%、25%刻み
+  cardInset: 30,       // 目標カードの左右余白px。大きいほど札が狭い
   rankTab: 'hits',     // 順位画面のどちら側。hits / done
+  homeTheme: 'neon',   // ホームの装飾パターン。neon/plate/marquee/fan/vault
 
   // 観客としての手持ち
   pt: 1200,
@@ -128,14 +130,37 @@ function show(view){
   $('#screen').scrollTop = 0;
 
   // タブの点灯は、その画面がどの世界に属するかで決める
-  const tab = view === 'floor' ? 'floor' : view === 'rank' ? 'rank' : 'mine';
+  const tab = view === 'floor' ? 'floor' : view === 'rank' ? 'rank' : view === 'home' ? 'home' : 'mine';
   state.tab = tab;
   $$('.tab').forEach(t => t.classList.toggle('is-on', t.dataset.tab === tab));
 
+  if (view === 'home')  renderHome();
   if (view === 'odds')  renderOdds();
   if (view === 'floor') renderFloor();
   if (view === 'rank')  renderRank();
   if (view === 'judge') $('#judge-proof').textContent = state.mine.proof;
+}
+
+// ---------- ホーム画面 ----------
+function renderHome(){
+  $('#home-pt').textContent = state.pt.toLocaleString();
+  $('#home-streak').textContent = state.mine.streak;
+  $('#home-live').textContent = state.floor.length;
+}
+
+const HOME_HINT = {
+  neon:    'A ネオンサイン：光の放射とロゴの発光で格式を出す',
+  plate:   'B 金属彫刻：ロゴを金属プレートに刻んだ重厚な入口',
+  marquee: 'C 電飾看板：縁の電球が点滅する、劇場の看板のような呼び込み',
+  fan:     'D カード扇：トランプを扇形に広げた華やかな入口',
+  vault:   'E 金庫：金庫の扉を思わせる円形の重厚な入口',
+};
+
+function setHomeTheme(v){
+  state.homeTheme = v;
+  $('#home-view').dataset.home = v;
+  $('#home-hint').textContent = HOME_HINT[v] || '';
+  $$('.homebtn').forEach(b => b.classList.toggle('is-on', b.dataset.homePick === v));
 }
 
 // 「自分」タブは、宣言の有無で行き先が変わる
@@ -370,9 +395,9 @@ function floorItemHTML(item, i){
           やる<b class="floor__odds">${oDo}倍</b></button>
         <button class="bet bet--no ${item.myBet==='no'?'is-picked':''}"
                 data-bet="no" data-id="${item.id}" ${done?'disabled':''}>
-          無理でしょ<b class="floor__odds">${oNo}倍</b></button>
+          やらない<b class="floor__odds">${oNo}倍</b></button>
       </div>
-      ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
+      ${done ? `<p class="floor__done">${(item.betAmount || BET_UNIT)}pt を賭けました。結果は締切に出ます。</p>` : ''}
 
       ${latest ? `<p class="floor__latest">
         <span class="floor__latest-day">Day ${latest.day}</span>${escapeHtml(latest.text)}</p>` : ''}
@@ -535,7 +560,15 @@ function renderTableProps(){
     // 種類は均等に巡回し、位置・回転・縮尺だけを乱す。seedによる品目の偏りを防ぐ。
     const kind = kinds[(index + kindOffset) % kinds.length];
     const bandY = (index + random() * .82) / count; // 縦だけは偏りすぎないよう帯をずらす
-    const x = -18 + random() * Math.max(1, width - 58);
+    // 札の外側へ寄せる。中央は札で覆われて見えないので、左右のレーンを主戦場にする。
+    // たまに中央へも置いて、帯状に整列して見えるのを防ぐ。
+    const lane = Math.max(26, state.cardInset + 14);
+    const r = random();
+    let x;
+    if (r < .42)       x = -20 + random() * lane;                    // 左のレーン
+    else if (r < .84)  x = width - lane - 14 + random() * lane;      // 右のレーン
+    else               x = lane + random() * Math.max(1, width - lane * 2 - 40);
+    x = Math.min(x, width - 24);
     const y = 38 + bandY * Math.max(1, height - 126);
     // 卓の縮尺に合わせて小さく置く。等倍だとチップが札の文字より大きく写る
     const scale = .44 + random() * .22;
@@ -558,13 +591,73 @@ function renderFloor(){
   renderTableProps();
 }
 
-function placeBet(id, side){
+function placeBet(id, side, amount = BET_UNIT){
+  const item = state.floor.find(x => x.id === id);
+  amount = Math.round(amount);
+  if (!item || item.myBet || amount < BET_UNIT || state.pt < amount) return;
+  item.myBet = side;
+  item.betAmount = amount;
+  if (side === 'do') item.poolDo += amount; else item.poolNo += amount;
+  state.pt -= amount;
+  renderFloor();
+}
+
+// ---------- 賭けPを決めるスロット ----------
+// .bet を押すと即座に賭けず、まずこのモーダルを開く。
+// レバーの上下ドラッグ／矢印キー、またはリールの直接クリックで賭けPを決め、
+// 「この額で賭ける」で確定して初めて placeBet() が呼ばれる。
+const slotState = { id:null, side:null, amount:BET_UNIT };
+let slotDragY = null;
+
+// 賭けられる上限。手持ちPを超えない・4桁リールに収まるよう9999で頭打ちにする
+function slotMax(){ return Math.max(BET_UNIT, Math.min(9999, state.pt)); }
+
+function openSlot(id, side){
   const item = state.floor.find(x => x.id === id);
   if (!item || item.myBet || state.pt < BET_UNIT) return;
-  item.myBet = side;
-  if (side === 'do') item.poolDo += BET_UNIT; else item.poolNo += BET_UNIT;
-  state.pt -= BET_UNIT;
-  renderFloor();
+  slotState.id = id;
+  slotState.side = side;
+  slotState.amount = Math.min(BET_UNIT, slotMax());
+
+  $('#slot-side').textContent = side === 'do' ? 'やる' : 'やらない';
+  $('#slot-side').className = 'slot__side ' + (side === 'do' ? 'is-do' : 'is-no');
+  $('#slot-title').textContent = item.text;
+  $('#slot-lever').setAttribute('aria-valuemax', String(slotMax()));
+
+  renderSlot();
+  $('#slot').hidden = false;
+  $('#slot-lever').focus();
+}
+
+function closeSlot(){
+  $('#slot').hidden = true;
+  slotState.id = null;
+  slotState.side = null;
+  slotDragY = null;
+}
+
+const slotIsOpen = () => !$('#slot').hidden;
+
+// 賭けPを更新して再描画する。下限BET_UNIT・上限slotMax()を必ず超えない
+function setSlotAmount(v){
+  const max = slotMax();
+  slotState.amount = Math.min(max, Math.max(BET_UNIT, Math.round(v)));
+  renderSlot();
+}
+
+function renderSlot(){
+  const digits = String(slotState.amount).padStart(4, '0').split('');
+  $$('#slot-reels .slot__reel span').forEach((el, i) => { el.textContent = digits[i]; });
+  $('#slot-lever').setAttribute('aria-valuenow', String(slotState.amount));
+
+  const item = state.floor.find(x => x.id === slotState.id);
+  if (!item) return;
+  const amount = slotState.amount;
+  // 「いま自分がこの額を賭けたら」の想定オッズで的中額を出す
+  const mult = slotState.side === 'do'
+    ? odds(item.poolDo + amount, item.poolNo)
+    : odds(item.poolNo + amount, item.poolDo);
+  $('#slot-payout').innerHTML = `的中なら <b>${Math.round(amount * mult).toLocaleString()}</b> P`;
 }
 
 // ---------- 判定 ----------
@@ -610,7 +703,7 @@ function showResult(){
   } else {
     $('.doubter').hidden = true;
     $('#result-payout').textContent =
-      `無理でしょ側に ${odds(m.poolNo, m.poolDo).toFixed(2)}倍 が配当されました。次回のあなたのオッズは、もっと悪くなります。`;
+      `やらない側に ${odds(m.poolNo, m.poolDo).toFixed(2)}倍 が配当されました。次回のあなたのオッズは、もっと悪くなります。`;
   }
   show('result');
 }
@@ -625,6 +718,7 @@ document.addEventListener('click', (e) => {
     const t = tab.dataset.tab;
     if (t === 'floor')      show('floor');
     else if (t === 'rank')  show('rank');
+    else if (t === 'home')  show('home');
     else                    goMine();
     return;
   }
@@ -636,7 +730,10 @@ document.addEventListener('click', (e) => {
   if (chip){ $('#declare-text').value = chip.dataset.fill; return; }
 
   const bet = e.target.closest('.bet');
-  if (bet){ placeBet(Number(bet.dataset.id), bet.dataset.bet); return; }
+  if (bet){ openSlot(Number(bet.dataset.id), bet.dataset.bet); return; }
+
+  const homePick = e.target.closest('[data-home-pick]');
+  if (homePick){ setHomeTheme(homePick.dataset.homePick); return; }
 
   const threadOpen = e.target.closest('[data-thread-open]');
   if (threadOpen){ openThread(Number(threadOpen.dataset.threadOpen)); return; }
@@ -664,12 +761,67 @@ $('#thread-sheet').addEventListener('click', (e) => {
 // Escで閉じる。<dialog> をやめたぶん自前で用意する
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (noticeIsOpen())      closeNotice();
+  if (slotIsOpen())        closeSlot();
+  else if (noticeIsOpen()) closeNotice();
   else if (threadIsOpen()) closeThread();
 });
 
+// リールを押すと、その桁だけ直接入力（0〜9を巡回）
+$('#slot-reels').addEventListener('click', (e) => {
+  const reel = e.target.closest('.slot__reel');
+  if (!reel) return;
+  const reels = $$('#slot-reels .slot__reel');
+  const idx = reels.indexOf(reel);
+  const digits = String(slotState.amount).padStart(4, '0').split('').map(Number);
+  digits[idx] = (digits[idx] + 1) % 10;
+  setSlotAmount(digits[0] * 1000 + digits[1] * 100 + digits[2] * 10 + digits[3]);
+});
+
+// レバーを掴んで上下にドラッグ。上へ振るほど賭けPが増える
+$('#slot-lever').addEventListener('pointerdown', (e) => {
+  slotDragY = e.clientY;
+  e.currentTarget.setPointerCapture(e.pointerId);
+});
+$('#slot-lever').addEventListener('pointermove', (e) => {
+  if (slotDragY === null) return;
+  const dy = slotDragY - e.clientY;   // 上へ動かすほど正の値
+  slotDragY = e.clientY;
+  if (dy !== 0) setSlotAmount(slotState.amount + dy * 4);
+});
+$('#slot-lever').addEventListener('pointerup', () => { slotDragY = null; });
+$('#slot-lever').addEventListener('pointercancel', () => { slotDragY = null; });
+
+// 上下矢印キーでも同じだけ動かせる
+$('#slot-lever').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp'){   e.preventDefault(); setSlotAmount(slotState.amount + 50); }
+  if (e.key === 'ArrowDown'){ e.preventDefault(); setSlotAmount(slotState.amount - 50); }
+});
+
+$('#slot-cancel').addEventListener('click', closeSlot);
+$('#slot-go').addEventListener('click', () => {
+  if (slotState.id === null) return;
+  placeBet(slotState.id, slotState.side, slotState.amount);
+  closeSlot();
+});
+// 背景（機体の外側）クリックで閉じる
+$('#slot').addEventListener('click', (e) => {
+  if (e.target.id === 'slot') closeSlot();
+});
+
+$('#home-declare').addEventListener('click', () => show('declare'));
+
 $('#journal-post').addEventListener('click', postJournal);
 $('#prop-amount').addEventListener('input', (e) => setPropAmount(e.target.value));
+
+// 目標カードの幅。狭めるほど外側の卓が見え、小物のレーンも広がる
+function setCardInset(px){
+  state.cardInset = Number(px);
+  document.documentElement.style.setProperty('--card-inset', `${state.cardInset}px`);
+  $('#card-inset').value = String(state.cardInset);
+  $('#card-inset-value').textContent = `${state.cardInset}px`;
+  renderTableProps();
+}
+$('#card-inset').addEventListener('input', (e) => setCardInset(e.target.value));
 
 // 宣言 → 審査
 $('#declare-submit').addEventListener('click', () => {
@@ -685,16 +837,21 @@ $('#declare-submit').addEventListener('click', () => {
   setTimeout(() => {
     const r = review(text);
     $('#check-loading').hidden = true;
+    const checkView = document.querySelector('.view[data-view="check"]');
 
     if (!r.ok){
       $('#reject-quote').textContent = `「${text.trim() || '（空）'}」`;
       $('#reject-reason').textContent = r.reason;
       $('#check-reject').hidden = false;
+      checkView.classList.add('is-reject');
+      checkView.classList.remove('is-accept');
       return;
     }
     $('#accept-quote').textContent = `「${text.trim()}」`;
     $('#accept-proof').textContent = r.proof;
     $('#check-accept').hidden = false;
+    checkView.classList.add('is-accept');
+    checkView.classList.remove('is-reject');
 
     // 受理された内容で自分の宣言を差し替える。プールと日誌は初期値から始める
     state.mine = { text:text.trim(), proof:r.proof, poolDo:100, poolNo:100, hoursLeft:due * 6,
@@ -718,7 +875,7 @@ $('#dropzone').addEventListener('click', function(){
 
 // ---------- デモ操作（端末の外） ----------
 $('#d-flow').addEventListener('click', () => {
-  // 観客の賭けを流し込む。自分の宣言には「無理でしょ」が集まりやすく寄せてある
+  // 観客の賭けを流し込む。自分の宣言には「やらない」が集まりやすく寄せてある
   state.mine.poolDo += Math.floor(Math.random() * 120);
   state.mine.poolNo += Math.floor(Math.random() * 320) + 80;
   state.floor.forEach(i => {
@@ -774,8 +931,10 @@ $('#d-reset').addEventListener('click', () => {
   $('#odds-value').textContent = '0';
   state.lastOdds = null;
   $('#odds-delta').textContent = '';
+  document.querySelector('.view[data-view="check"]').classList.remove('is-reject', 'is-accept');
   closeThread();
   closeNotice();
+  closeSlot();
   show('empty');
 });
 
@@ -784,6 +943,8 @@ updateFormula();
 setDensity(state.density);
 setTable(state.table);
 setPropAmount(state.propAmount);
+setCardInset(state.cardInset);
+setHomeTheme(state.homeTheme);
 renderFloor();
 renderRank();
-show('empty');
+show('home');

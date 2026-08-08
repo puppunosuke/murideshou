@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CANBLE — プロトタイプ</title>
+<title>無理でしょ — プロトタイプ</title>
 <link rel="stylesheet" href="vendor/fonts/fonts.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -44,7 +44,7 @@
   <!-- ヘッダー：プロトの説明。実アプリの画面ではない -->
   <header class="stage__head">
     <div>
-      <h1 class="wordmark">CANBLE</h1>
+      <h1 class="wordmark">無理でしょ</h1>
       <p class="tagline">応援されるより、疑われたほうが人は動く。</p>
     </div>
     <p class="stamp">PROTOTYPE&nbsp;/&nbsp;v0.1</p>
@@ -57,44 +57,6 @@
       <div class="phone__screen" id="screen">
 
         <!-- ---------- 自分タブ：宣言がまだ無い状態 ---------- -->
-        <!-- ---------- ホーム：店の入口。ロゴを主役に、装飾で格式を作る ---------- -->
-        <section class="view view--home" data-view="home" id="home-view" data-home="neon">
-          <!-- 地の装飾。パターンごとにCSSで出し分ける -->
-          <div class="home__deco" aria-hidden="true">
-            <div class="home__rays"></div>
-            <div class="home__arch"></div>
-            <div class="home__bulbs">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
-            <svg class="home__suits" viewBox="0 0 108 24">
-              <use href="#suit-spade" x="0"/><use href="#suit-heart" x="28"/>
-              <use href="#suit-diamond" x="56"/><use href="#suit-club" x="84"/>
-            </svg>
-            <div class="home__fan">
-              <i></i><i></i><i></i><i></i><i></i>
-            </div>
-            <div class="home__chips">
-              <i></i><i></i><i></i>
-            </div>
-          </div>
-
-          <div class="home__body">
-            <p class="home__est">EST. 2026 — MEMBERS ONLY</p>
-            <h1 class="home__logo"><span>CANBLE</span></h1>
-            <p class="home__tag">言え。賭けろ。やり切れ。</p>
-
-            <div class="home__stats">
-              <div><b id="home-streak">3</b><span>連続達成</span></div>
-              <div><b id="home-pt">1,200</b><span>手持ちP</span></div>
-              <div><b id="home-live">5</b><span>進行中</span></div>
-            </div>
-
-            <button class="btn btn--fill" id="home-declare">今週の宣言をする</button>
-            <button class="btn" data-go="floor">賭場へ入る</button>
-          </div>
-        </section>
-
         <section class="view" data-view="empty">
           <div class="view__pad view__center">
             <svg class="blob blob--empty" viewBox="0 0 100 100" aria-hidden="true">
@@ -108,7 +70,6 @@
 
         <!-- ---------- 宣言：入力 ---------- -->
         <section class="view" data-view="declare">
-          <svg class="blob blob--declare" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-diamond"/></svg>
           <div class="view__pad">
             <p class="step">STEP 1 / 2</p>
             <h2 class="h-2">何を、いつまでに？</h2>
@@ -140,7 +101,6 @@
 
         <!-- ---------- 宣言：AI審査の結果 ---------- -->
         <section class="view" data-view="check">
-          <svg class="blob blob--check" viewBox="0 0 100 100" aria-hidden="true"><use href="#chip"/></svg>
           <div class="view__pad">
             <p class="step">STEP 2 / 2</p>
 
@@ -194,7 +154,7 @@
             <p class="odds__delta" id="odds-delta"></p>
 
             <p class="odds__doubt">
-              <b id="odds-doubt">68</b>% が「やらない」
+              <b id="odds-doubt">68</b>% が「無理でしょ」
             </p>
 
             <div class="odds__bar" aria-hidden="true">
@@ -256,7 +216,7 @@
                   <use href="#suit-diamond" x="56" />
                   <use href="#suit-club"    x="84" />
                 </svg>
-                <p class="table__name">CANBLE</p>
+                <p class="table__name">無理でしょ</p>
                 <p class="table__sub">NO LIMIT — DECLARE &amp; BET</p>
               </div>
 
@@ -296,10 +256,6 @@
         <!-- ---------- 順位 ---------- -->
         <section class="view view--rank" data-view="rank">
           <div class="rank__head">
-            <svg class="rank__watermark" viewBox="0 0 108 24" aria-hidden="true">
-              <use href="#suit-spade" x="0"/><use href="#suit-heart" x="28"/>
-              <use href="#suit-diamond" x="56"/><use href="#suit-club" x="84"/>
-            </svg>
             <h2 class="h-3">順位</h2>
             <div class="rank__segs">
               <button class="rank__seg is-on" data-rank="hits">予想的中</button>
@@ -312,7 +268,6 @@
 
         <!-- ---------- 判定：証拠提出 ---------- -->
         <section class="view" data-view="judge">
-          <svg class="blob blob--judge" viewBox="0 0 100 100" aria-hidden="true"><use href="#suit-club"/></svg>
           <div class="view__pad">
             <h2 class="h-2">証拠を出す</h2>
             <div class="kv">
@@ -358,46 +313,10 @@
 
       <!-- タブバー：実アプリのナビ -->
       <nav class="tabbar">
-        <button class="tab is-on" data-tab="home">ホーム</button>
-        <button class="tab" data-tab="mine">自分</button>
+        <button class="tab is-on" data-tab="mine">自分</button>
         <button class="tab" data-tab="floor">賭場</button>
         <button class="tab" data-tab="rank">順位</button>
       </nav>
-
-      <!-- 賭けP を決めるスロット。レバーで増減、リールを押せば直接入力 -->
-      <div class="slot" id="slot" hidden>
-        <div class="slot__machine" role="dialog" aria-modal="true" aria-labelledby="slot-title">
-          <div class="slot__head">
-            <p class="slot__side" id="slot-side">やる</p>
-            <p class="slot__title" id="slot-title">金曜までに履歴書を出す</p>
-          </div>
-
-          <div class="slot__body">
-            <div class="slot__reels" id="slot-reels">
-              <button class="slot__reel" data-digit="0"><span>0</span></button>
-              <button class="slot__reel" data-digit="1"><span>1</span></button>
-              <button class="slot__reel" data-digit="2"><span>0</span></button>
-              <button class="slot__reel" data-digit="3"><span>0</span></button>
-            </div>
-            <p class="slot__unit">P</p>
-
-            <!-- レバー。掴んで上下に振ると賭けPが動く -->
-            <div class="slot__lever" id="slot-lever" role="slider"
-                 aria-label="賭けP" aria-valuemin="100" aria-valuemax="1200" aria-valuenow="100" tabindex="0">
-              <i class="slot__lever-ball"></i>
-              <i class="slot__lever-rod"></i>
-            </div>
-          </div>
-
-          <p class="slot__hint" id="slot-hint">レバーを上下に振る／リールを押すと直接入力</p>
-          <p class="slot__payout" id="slot-payout">的中なら <b>135</b> P</p>
-
-          <div class="slot__acts">
-            <button class="btn" id="slot-cancel">やめる</button>
-            <button class="btn btn--fill" id="slot-go">この額で賭ける</button>
-          </div>
-        </div>
-      </div>
 
       <!-- 週次の一斉通知：日曜21:00、宣言のない全員に同時に飛ぶ -->
       <div class="notice" id="notice" hidden>
@@ -458,24 +377,6 @@
         <input class="prop-range" id="prop-amount" type="range" min="0" max="200" step="25" value="100">
         <div class="prop-scale" aria-hidden="true"><span>なし</span><span>標準</span><span>2倍</span></div>
         <p class="demopanel__hint">カードの位置は変えず、背景の小物だけ0〜200%で増減する</p>
-
-        <p class="demopanel__cap" style="margin-top:var(--s-3)">ホームの装飾パターン</p>
-        <div class="demopanel__jump">
-          <button class="dbtn dbtn--s homebtn" data-home-pick="neon">A ネオン</button>
-          <button class="dbtn dbtn--s homebtn" data-home-pick="plate">B 金属彫刻</button>
-          <button class="dbtn dbtn--s homebtn" data-home-pick="marquee">C 電飾看板</button>
-          <button class="dbtn dbtn--s homebtn" data-home-pick="fan">D カード扇</button>
-          <button class="dbtn dbtn--s homebtn" data-home-pick="vault">E 金庫</button>
-        </div>
-        <p class="demopanel__hint" id="home-hint"></p>
-
-        <label class="prop-control" for="card-inset">
-          <span>目標カードの幅</span>
-          <output id="card-inset-value" for="card-inset">30px</output>
-        </label>
-        <input class="prop-range" id="card-inset" type="range" min="16" max="72" step="2" value="30">
-        <div class="prop-scale" aria-hidden="true"><span>広い</span><span>標準</span><span>狭い</span></div>
-        <p class="demopanel__hint">札を狭めるほど、外側に卓と小物のレーンが広がる</p>
       </div>
 
       <div class="demopanel__group">
