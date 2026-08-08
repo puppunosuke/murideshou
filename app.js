@@ -341,8 +341,17 @@ function floorItemHTML(item, i){
     ? [...item.comments].sort((a, b) => b.day - a.day)[0]
     : null;
 
+  // 賭けた札の脇へ、自分のチップを積む。
+  // ランダムに散らした小物は「散らかった卓」にしかならないが、
+  // 賭けと連動した物は「いま進行中の局面」になる。装飾がそのまま情報になる。
+  const stake = done ? `
+      <span class="floor__stake floor__stake--${item.myBet}" aria-hidden="true">
+        <i></i><i></i><i></i>
+      </span>` : '';
+
   return `
     <li class="floor__item">
+      ${stake}
       <span class="floor__no">${String(i + 1).padStart(2, '0')}</span>
       <p class="floor__who">${item.who}${streakBadge(item.streak)}</p>
       <p class="floor__text">${item.text}</p>
@@ -502,7 +511,9 @@ function renderTableProps(){
     cash:  props.querySelector(':scope > .table-prop--cash'),
     pawn:  props.querySelector(':scope > .table-prop--pawn'),
   };
-  const kinds = ['chips', 'cards', 'cash', 'pawn'];
+  // ポーカー卓なので、出るものはチップが主。カード・紙幣・駒は「たまに混じる」程度に留める。
+  // 4種を均等に巡回させると、卓というより物置に見えてしまう。
+  const kinds = ['chips', 'chips', 'cards', 'chips', 'cash', 'chips', 'cards', 'pawn'];
   const height = inner.offsetHeight;
   const width = inner.clientWidth;
   // 標準は、前景の背後へ隠れるぶんを見込み卓面積125pxごとに約1個。
@@ -526,7 +537,8 @@ function renderTableProps(){
     const bandY = (index + random() * .82) / count; // 縦だけは偏りすぎないよう帯をずらす
     const x = -18 + random() * Math.max(1, width - 58);
     const y = 38 + bandY * Math.max(1, height - 126);
-    const scale = .88 + random() * .32;
+    // 卓の縮尺に合わせて小さく置く。等倍だとチップが札の文字より大きく写る
+    const scale = .44 + random() * .22;
     const rotate = -28 + random() * 56;
 
     scatter.className = `table-scatter table-scatter--${kind}`;
