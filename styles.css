@@ -318,6 +318,11 @@ select option{ background:#0A0A0B; color:var(--chalk); }
   position:sticky; top:0; height:0; z-index:0;
   pointer-events:none;
 }
+/* 前後比較用。off にすると卓の演出を全部外して、元の無地のフェルトに戻る */
+[data-table="off"] .floor__table{ display:none; }
+[data-table="off"]{ background:var(--felt); }
+[data-table="off"].view--floor::before,
+[data-table="off"].view--floor::after{ display:none; }
 .floor__table::before{
   content:""; position:absolute; left:0; right:0; top:0; height:var(--screen-h);
 
@@ -524,6 +529,100 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="tight"] .bet .floor__odds{ font-size:14px; }
 [data-density="tight"] .floor__latest{ margin-top:var(--s-1); }
 [data-density="tight"] .floor__thread{ padding:var(--s-1); font-size:11px; margin-top:var(--s-1); }
+
+/* 連続達成のバッジ。0週なら出さない＝無いことをわざわざ責めない */
+.streak{
+  display:inline-block; margin-left:var(--s-2);
+  border:1px solid rgba(255,177,0,.5); border-radius:var(--ctrl-radius, 8px);
+  padding:0 var(--s-1); font-size:11px; color:var(--amber);
+  font-family:"Inter","Zen Kaku Gothic New"; letter-spacing:0;
+}
+
+/* ============================================================
+   順位 — 予想的中／宣言達成
+   ============================================================ */
+.view--rank{ background:var(--felt-deep); }
+
+.rank__head{
+  padding:var(--s-3) var(--s-4);
+  border-bottom:1.5px solid var(--gold);
+  position:sticky; top:0; z-index:2; background:var(--felt-deep);
+}
+.rank__segs{ display:flex; gap:var(--s-2); margin-top:var(--s-3); }
+.rank__seg{
+  flex:1; border:1.5px solid var(--gold-dim); border-radius:var(--ctrl-radius);
+  background:rgba(0,0,0,.3); color:var(--dust);
+  padding:var(--s-2); font-size:13px; font-weight:700; min-height:44px;
+}
+.rank__seg.is-on{ border-color:var(--amber); color:var(--amber); background:rgba(255,177,0,.10); }
+.rank__note{ font-size:12px; color:var(--dust); margin:var(--s-2) 0 0; }
+
+.rank__list{ list-style:none; margin:0; padding:var(--s-2) var(--s-3) var(--s-5); }
+.rank__item{
+  display:grid; grid-template-columns:28px 1fr auto; gap:0 var(--s-2);
+  align-items:center;
+  border-bottom:1.5px solid rgba(201,162,39,.18);
+  padding:var(--s-2) var(--s-2);
+}
+/* 自分の行だけ金で囲って、順位表の中の居場所を分かるようにする */
+.rank__item.is-me{
+  border:1.5px solid var(--gold); border-radius:var(--card-radius);
+  background:linear-gradient(160deg, rgba(201,162,39,.16), rgba(0,0,0,.3) 60%);
+  margin:var(--s-1) 0;
+}
+.rank__no{
+  font-family:"Inter"; font-size:16px; font-weight:700; color:var(--gold-dim);
+  text-align:center;
+}
+.rank__item:nth-child(1) .rank__no,
+.rank__item:nth-child(2) .rank__no,
+.rank__item:nth-child(3) .rank__no{ color:var(--amber); }
+.rank__who{ font-family:"Inter","Zen Kaku Gothic New"; font-size:14px; font-weight:700; color:var(--chalk); }
+.rank__sub{ grid-column:2; font-size:11px; color:var(--dust); font-family:"Inter"; }
+.rank__rate{
+  grid-row:1 / span 2; grid-column:3;
+  font-family:"Inter"; font-size:24px; font-weight:700; color:var(--amber);
+  font-variant-numeric:tabular-nums;
+}
+.rank__rate i{ font-size:12px; font-style:normal; margin-left:1px; }
+
+/* ============================================================
+   週次の一斉通知（日曜21:00）
+   端末の中に出す。全員へ同時に飛ぶ緊張を、赤いランプと秒読みで作る
+   ============================================================ */
+.notice{
+  position:absolute; inset:0; z-index:30;
+  background:rgba(0,0,0,.82);
+  display:flex; align-items:center; justify-content:center; padding:var(--s-4);
+}
+.notice[hidden]{ display:none; }
+
+.notice__panel{
+  width:100%; background:var(--board);
+  border:2px solid var(--lose); padding:var(--s-4);
+  box-shadow:0 0 40px rgba(255,23,68,.28);
+  animation:noticeIn .24s ease-out;
+}
+@keyframes noticeIn{ from{ transform:scale(.96); opacity:0 } to{ transform:none; opacity:1 } }
+
+.notice__when{
+  display:flex; align-items:center; gap:var(--s-2);
+  font-family:"Inter"; font-size:11px; letter-spacing:0.12em; color:var(--lose); margin:0;
+}
+.notice__when::before{
+  content:""; width:8px; height:8px; background:var(--lose);
+  border-radius:50%; box-shadow:0 0 8px var(--lose);
+  animation:pulse 1.4s infinite;
+}
+.notice__title{ font-size:28px; line-height:1.2; font-weight:700; margin:var(--s-3) 0 var(--s-2); }
+.notice__count{
+  font-family:"Inter"; font-size:56px; font-weight:700; line-height:1;
+  color:var(--amber); font-variant-numeric:tabular-nums; margin:var(--s-2) 0;
+  text-shadow:0 0 8px rgba(255,177,0,.8), 0 0 32px rgba(255,177,0,.4);
+}
+.notice__count[hidden]{ display:none; }
+.notice__sub{ font-size:12px; color:var(--dust); margin:0 0 var(--s-3); }
+.notice__panel .btn{ margin-top:var(--s-2); }
 
 /* ---------- 証拠提出 ---------- */
 .dropzone{

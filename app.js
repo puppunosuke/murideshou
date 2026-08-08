@@ -33,37 +33,65 @@ const state = {
     hoursLeft: 62,
     lastPostDay: 0,   // 最後に日誌を投稿した日。今日と同じなら投稿済み
     comments: [],     // 自分の日誌（宣言者本人が書く、1日1回）
+    streak: 3,        // 連続達成の週数
   },
 
   lastOdds: null,   // 前回表示した倍率。変動の矢印を出すために持つ
   day: 4,              // 通し日数。日誌の「1日1回」制限の基準
   threadFor: null,     // 今スレッドを開いている賭場カードのid
   density: 'loose',    // 賭場の札の大きさ。loose / normal / tight
+  table: 'on',         // 卓の背景。前後比較のため off にできる
+  rankTab: 'hits',     // 順位画面のどちら側。hits / done
 
   // 観客としての手持ち
   pt: 1200,
-  betsLeft: 3,     // 1日3回まで。使わないと消える＝流通を作るための制約
 
   // 賭場に並ぶ他人の宣言。comments は宣言者本人が書いた日誌のスレッド
   floor: [
-    { id:1, who:'@kenta',  text:'金曜までに履歴書を出す',       poolDo:420, poolNo:180, hoursLeft:38,  myBet:null, comments: [
+    { id:1, who:'@kenta',  text:'金曜までに履歴書を出す',       poolDo:420, poolNo:180, hoursLeft:38,  myBet:null, streak:5, comments: [
       { id:101, day:1, text:'まず職務経歴書のフォーマットだけ決めた。', reactions: mkReactions({cheer:4, doubt:0, free:1, trust:2}), myReaction:null },
       { id:102, day:2, text:'書き出したら止まらなくなってきた。明日には終わりそう。', reactions: mkReactions({cheer:9, doubt:1, free:0, trust:5}), myReaction:null },
     ]},
-    { id:2, who:'@mio',    text:'今月中に5kmを30分で走る',      poolDo:260, poolNo:940, hoursLeft:210, myBet:null, comments: [
+    { id:2, who:'@mio',    text:'今月中に5kmを30分で走る',      poolDo:260, poolNo:940, hoursLeft:210, myBet:null, streak:6, comments: [
       { id:201, day:1, text:'今日は2kmで足が終わった。先は長い。', reactions: mkReactions({cheer:6, doubt:3, free:2, trust:1}), myReaction:null },
       { id:202, day:3, text:'3km、28分ペースまで来た。いける気がしてきた。', reactions: mkReactions({cheer:11, doubt:0, free:0, trust:4}), myReaction:null },
     ]},
-    { id:3, who:'@shun',   text:'明日6時に起きる',              poolDo:610, poolNo:590, hoursLeft:14,  myBet:null, comments: [
+    { id:3, who:'@shun',   text:'明日6時に起きる',              poolDo:610, poolNo:590, hoursLeft:14,  myBet:null, streak:0, comments: [
       { id:301, day:3, text:'アラーム3個セットした。これで多分いける。', reactions: mkReactions({cheer:2, doubt:8, free:5, trust:0}), myReaction:null },
     ]},
-    { id:4, who:'@aya',    text:'週末までに部屋を片付ける',      poolDo:150, poolNo:770, hoursLeft:56,  myBet:null, comments: [
+    { id:4, who:'@aya',    text:'週末までに部屋を片付ける',      poolDo:150, poolNo:770, hoursLeft:56,  myBet:null, streak:1, comments: [
       { id:401, day:2, text:'服だけ全部たたんだ。本棚は見なかったことにした。', reactions: mkReactions({cheer:3, doubt:2, free:6, trust:0}), myReaction:null },
     ]},
-    { id:5, who:'@takuo',  text:'今日中にプロトを動かす',        poolDo:300, poolNo:900, hoursLeft:6,   myBet:null, comments: [
+    { id:5, who:'@takuo',  text:'今日中にプロトを動かす',        poolDo:300, poolNo:900, hoursLeft:6,   myBet:null, streak:2, comments: [
       { id:501, day:4, text:'賭場の画面だけ4案作ってる。まだ終わらない。', reactions: mkReactions({cheer:7, doubt:1, free:3, trust:2}), myReaction:null },
     ]},
   ],
+
+  // 順位。自分（@you）も混ぜて、自分の位置が分かるようにする
+  ranking: {
+    // 予想的中：他人の宣言を当てた回数。賭ける側の腕前
+    hits: [
+      { who:'@rui',   hit:47, total:52 },
+      { who:'@kenta', hit:38, total:44 },
+      { who:'@you',   hit:31, total:40, me:true },
+      { who:'@mio',   hit:29, total:39 },
+      { who:'@nao',   hit:26, total:36 },
+      { who:'@aya',   hit:21, total:33 },
+      { who:'@shun',  hit:14, total:31 },
+      { who:'@takuo', hit:12, total:30 },
+    ],
+    // 宣言達成：自分が言ったことをやり切った回数。ストリークが主役
+    done: [
+      { who:'@mio',   done:11, total:12, streak:6 },
+      { who:'@kenta', done:9,  total:11, streak:5 },
+      { who:'@rui',   done:8,  total:10, streak:4 },
+      { who:'@you',   done:7,  total:10, streak:3, me:true },
+      { who:'@takuo', done:6,  total:11, streak:2 },
+      { who:'@nao',   done:5,  total:9,  streak:1 },
+      { who:'@aya',   done:4,  total:10, streak:1 },
+      { who:'@shun',  done:3,  total:12, streak:0 },
+    ],
+  },
 };
 
 const BET_UNIT = 100;   // 1回の賭け金は固定。金額で悩ませない
@@ -98,13 +126,14 @@ function show(view){
   $$('.view').forEach(v => v.classList.toggle('is-on', v.dataset.view === view));
   $('#screen').scrollTop = 0;
 
-  // タブの点灯は、その画面がどちらの世界に属するかで決める
-  const tab = (view === 'floor') ? 'floor' : 'mine';
+  // タブの点灯は、その画面がどの世界に属するかで決める
+  const tab = view === 'floor' ? 'floor' : view === 'rank' ? 'rank' : 'mine';
   state.tab = tab;
   $$('.tab').forEach(t => t.classList.toggle('is-on', t.dataset.tab === tab));
 
   if (view === 'odds')  renderOdds();
   if (view === 'floor') renderFloor();
+  if (view === 'rank')  renderRank();
   if (view === 'judge') $('#judge-proof').textContent = state.mine.proof;
 }
 
@@ -305,7 +334,6 @@ function floorItemHTML(item, i){
   const supportDo = item.poolDo / total * 100;
   const heads = Math.round(total / BET_UNIT);      // 賭けている人数の目安
   const done  = item.myBet !== null;
-  const dead  = state.betsLeft <= 0 && !done;
 
   // 最新の日誌を1行だけ札に載せる。開かなくても場の空気が伝わるように
   const latest = item.comments.length
@@ -315,7 +343,7 @@ function floorItemHTML(item, i){
   return `
     <li class="floor__item">
       <span class="floor__no">${String(i + 1).padStart(2, '0')}</span>
-      <p class="floor__who">${item.who}</p>
+      <p class="floor__who">${item.who}${streakBadge(item.streak)}</p>
       <p class="floor__text">${item.text}</p>
 
       <div class="floor__support" aria-hidden="true"><i style="width:${supportDo.toFixed(1)}%"></i></div>
@@ -328,10 +356,10 @@ function floorItemHTML(item, i){
 
       <div class="floor__acts">
         <button class="bet bet--do ${item.myBet==='do'?'is-picked':''}"
-                data-bet="do" data-id="${item.id}" ${done||dead?'disabled':''}>
+                data-bet="do" data-id="${item.id}" ${done?'disabled':''}>
           やる<b class="floor__odds">${oDo}倍</b></button>
         <button class="bet bet--no ${item.myBet==='no'?'is-picked':''}"
-                data-bet="no" data-id="${item.id}" ${done||dead?'disabled':''}>
+                data-bet="no" data-id="${item.id}" ${done?'disabled':''}>
           無理でしょ<b class="floor__odds">${oNo}倍</b></button>
       </div>
       ${done ? `<p class="floor__done">${BET_UNIT}pt を賭けました。結果は締切に出ます。</p>` : ''}
@@ -344,6 +372,81 @@ function floorItemHTML(item, i){
       </button>
     </li>`;
 }
+
+// ---------- 順位 ----------
+// 予想的中＝賭ける側の腕前、宣言達成＝宣言する側の信用。両方あって場が成立する
+function renderRank(){
+  const isHits = state.rankTab === 'hits';
+  $$('.rank__seg').forEach(b => b.classList.toggle('is-on', b.dataset.rank === state.rankTab));
+  $('#rank-note').textContent = isHits
+    ? '他人の宣言をどれだけ言い当てたか。疑う目の正確さ'
+    : '言ったことをどれだけやり切ったか。連続記録が信用になる';
+
+  const rows = isHits
+    ? [...state.ranking.hits].sort((a, b) => b.hit / b.total - a.hit / a.total)
+    : [...state.ranking.done].sort((a, b) => b.streak - a.streak || b.done - a.done);
+
+  $('#rank-list').innerHTML = rows.map((r, i) => {
+    const rate = isHits
+      ? Math.round(r.hit / r.total * 100)
+      : Math.round(r.done / r.total * 100);
+    // 並び順と、右端の大きな数字は必ず一致させる。
+    // 達成側は連続記録が主役なので、率は補助に落とす
+    const main = isHits ? `${rate}<i>%</i>` : `${r.streak}<i>週</i>`;
+    const sub  = isHits
+      ? `${r.hit} / ${r.total} 的中`
+      : `${r.done} / ${r.total} 達成・${rate}%`;
+    return `
+      <li class="rank__item ${r.me ? 'is-me' : ''}">
+        <span class="rank__no">${i + 1}</span>
+        <span class="rank__who">${r.who}</span>
+        <span class="rank__sub">${sub}</span>
+        <span class="rank__rate">${main}</span>
+      </li>`;
+  }).join('');
+}
+
+// ---------- 週次の一斉通知 ----------
+// 日曜21:00、宣言のない全員に同時に飛ぶ。10分の締切が全員で共有されるのが肝
+let noticeTimer = null;
+
+function openNotice(){
+  // すでに宣言している人には飛ばさない
+  if (state.hasDeclared){
+    $('#notice-title').textContent = '今週はもう宣言済み';
+    $('#notice-sub').textContent = 'この通知は、宣言のない人にだけ届いています。';
+    $('#notice-count').hidden = true;
+    $('#notice-go').hidden = true;
+  } else {
+    // 「10分以／内。」と割れるので読点で改行を固定する（静的文字列）
+    $('#notice-title').innerHTML = '今週の宣言、<br>10分以内。';
+    $('#notice-sub').textContent = 'いま宣言のない全員に、同時に届いています。';
+    $('#notice-count').hidden = false;
+    $('#notice-go').hidden = false;
+  }
+  $('#notice').hidden = false;
+  startNoticeCountdown(10 * 60);
+}
+
+function startNoticeCountdown(sec){
+  clearInterval(noticeTimer);
+  const tick = () => {
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    $('#notice-count').textContent = `${m}:${s}`;
+    if (sec <= 0){ clearInterval(noticeTimer); return; }
+    sec -= 1;
+  };
+  tick();
+  noticeTimer = setInterval(tick, 1000);
+}
+
+function closeNotice(){
+  clearInterval(noticeTimer);
+  $('#notice').hidden = true;
+}
+
+const noticeIsOpen = () => !$('#notice').hidden;
 
 // 賭場の密度（札の大きさ）を切り替える。見た目はCSSの [data-density] が作る
 const DENSITY_HINT = {
@@ -359,8 +462,20 @@ function setDensity(d){
   $$('.densbtn').forEach(b => b.classList.toggle('is-on', b.dataset.densityPick === d));
 }
 
+// 卓の地の有無。ポーカーテーブルの前後を見比べるための切り替え
+function setTable(v){
+  state.table = v;
+  $('#floor-view').dataset.table = v;
+  $$('.tablebtn').forEach(b => b.classList.toggle('is-on', b.dataset.tablePick === v));
+}
+
+// 連続達成のバッジ。0週なら出さない（無いことをわざわざ責めない）
+function streakBadge(n){
+  if (!n) return '';
+  return `<span class="streak">${n}週連続</span>`;
+}
+
 function renderFloor(){
-  $('#bet-left').textContent = state.betsLeft;
   $('#pt').textContent = state.pt.toLocaleString();
 
   $('#floor-list').innerHTML = state.floor.map(floorItemHTML).join('');
@@ -368,11 +483,10 @@ function renderFloor(){
 
 function placeBet(id, side){
   const item = state.floor.find(x => x.id === id);
-  if (!item || item.myBet || state.betsLeft <= 0 || state.pt < BET_UNIT) return;
+  if (!item || item.myBet || state.pt < BET_UNIT) return;
   item.myBet = side;
   if (side === 'do') item.poolDo += BET_UNIT; else item.poolNo += BET_UNIT;
   state.pt -= BET_UNIT;
-  state.betsLeft -= 1;
   renderFloor();
 }
 
@@ -430,7 +544,16 @@ document.addEventListener('click', (e) => {
   if (go){ show(go.dataset.go); return; }
 
   const tab = e.target.closest('.tab');
-  if (tab){ tab.dataset.tab === 'floor' ? show('floor') : goMine(); return; }
+  if (tab){
+    const t = tab.dataset.tab;
+    if (t === 'floor')      show('floor');
+    else if (t === 'rank')  show('rank');
+    else                    goMine();
+    return;
+  }
+
+  const seg = e.target.closest('.rank__seg');
+  if (seg){ state.rankTab = seg.dataset.rank; renderRank(); return; }
 
   const chip = e.target.closest('.chip');
   if (chip){ $('#declare-text').value = chip.dataset.fill; return; }
@@ -448,6 +571,12 @@ document.addEventListener('click', (e) => {
 
   const dens = e.target.closest('[data-density-pick]');
   if (dens){ setDensity(dens.dataset.densityPick); return; }
+
+  const tbl = e.target.closest('[data-table-pick]');
+  if (tbl){ setTable(tbl.dataset.tablePick); return; }
+
+  if (e.target.closest('#notice-later')){ closeNotice(); return; }
+  if (e.target.closest('#notice-go')){ closeNotice(); show('declare'); return; }
 });
 
 // 背景（シートの外側）クリックで閉じる
@@ -457,7 +586,9 @@ $('#thread-sheet').addEventListener('click', (e) => {
 
 // Escで閉じる。<dialog> をやめたぶん自前で用意する
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && threadIsOpen()) closeThread();
+  if (e.key !== 'Escape') return;
+  if (noticeIsOpen())      closeNotice();
+  else if (threadIsOpen()) closeThread();
 });
 
 $('#journal-post').addEventListener('click', postJournal);
@@ -540,6 +671,8 @@ $('#d-react').addEventListener('click', () => {
   if (state.view === 'floor') renderFloor();
 });
 
+$('#d-notice').addEventListener('click', openNotice);
+
 $('#d-day').addEventListener('click', () => {
   // 日誌の「1日1回」をデモで確かめるための日送り。締切やオッズには触らない
   state.day += 1;
@@ -553,7 +686,6 @@ $('#d-reset').addEventListener('click', () => {
   state.day = DEFAULT_DAY;
   state.threadFor = null;
   state.pt = 1200;
-  state.betsLeft = 3;
   $('#declare-text').value = '';
   $('#journal-text').value = '';
   const dz = $('#dropzone');
@@ -565,11 +697,14 @@ $('#d-reset').addEventListener('click', () => {
   state.lastOdds = null;
   $('#odds-delta').textContent = '';
   closeThread();
+  closeNotice();
   show('empty');
 });
 
 // ---------- 起動 ----------
 updateFormula();
 setDensity(state.density);
+setTable(state.table);
 renderFloor();
+renderRank();
 show('empty');

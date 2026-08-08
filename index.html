@@ -191,13 +191,26 @@
         <section class="view view--floor" data-view="floor" id="floor-view" data-skin="card" data-density="loose">
           <div class="floor__head">
             <h2 class="h-3">賭場</h2>
-            <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
+            <p class="floor__credit"><b id="pt">1,200</b> pt</p>
           </div>
           <!-- ポーカーテーブルの面。sticky で画面に貼り付けるので、
                札をスクロールしてもテーブルの照明と縁は動かない -->
           <div class="floor__table" aria-hidden="true"></div>
 
           <ul class="floor__list" id="floor-list"><!-- JSで描画 --></ul>
+        </section>
+
+        <!-- ---------- 順位 ---------- -->
+        <section class="view view--rank" data-view="rank">
+          <div class="rank__head">
+            <h2 class="h-3">順位</h2>
+            <div class="rank__segs">
+              <button class="rank__seg is-on" data-rank="hits">予想的中</button>
+              <button class="rank__seg" data-rank="done">宣言達成</button>
+            </div>
+            <p class="rank__note" id="rank-note"></p>
+          </div>
+          <ol class="rank__list" id="rank-list"><!-- JSで描画 --></ol>
         </section>
 
         <!-- ---------- 判定：証拠提出 ---------- -->
@@ -249,7 +262,20 @@
       <nav class="tabbar">
         <button class="tab is-on" data-tab="mine">自分</button>
         <button class="tab" data-tab="floor">賭場</button>
+        <button class="tab" data-tab="rank">順位</button>
       </nav>
+
+      <!-- 週次の一斉通知：日曜21:00、宣言のない全員に同時に飛ぶ -->
+      <div class="notice" id="notice" hidden>
+        <div class="notice__panel" role="dialog" aria-modal="true" aria-labelledby="notice-title">
+          <p class="notice__when">日曜 21:00 ／ 全員に同時送信</p>
+          <h2 class="notice__title" id="notice-title">今週の宣言、10分以内。</h2>
+          <p class="notice__count" id="notice-count">10:00</p>
+          <p class="notice__sub" id="notice-sub">いま宣言のない全員に、同時に届いています。</p>
+          <button class="btn btn--fill" id="notice-go">宣言する</button>
+          <button class="btn" id="notice-later">あとで</button>
+        </div>
+      </div>
 
       <!-- スレッド：賭場カード1件ぶんの日誌一覧。一覧の直下へ積まず別面へ分離する。
            <dialog>+showModal() は top-layer に出て端末フレームの外へはみ出すため、
@@ -277,9 +303,19 @@
         <p class="demopanel__cap">時間と賭けを動かす</p>
         <button class="dbtn" id="d-flow">観客の賭けを流す</button>
         <button class="dbtn" id="d-react">日誌に反応が付く</button>
+        <button class="dbtn" id="d-notice">日曜21:00の一斉通知を出す</button>
         <button class="dbtn" id="d-time">締切まで進める</button>
         <button class="dbtn" id="d-day">次の日にする（日誌が解禁）</button>
         <button class="dbtn" id="d-reset">最初から</button>
+      </div>
+
+      <div class="demopanel__group">
+        <p class="demopanel__cap">卓の地（ポーカーテーブル）</p>
+        <div class="demopanel__jump">
+          <button class="dbtn dbtn--s tablebtn" data-table-pick="off">前（無地）</button>
+          <button class="dbtn dbtn--s tablebtn" data-table-pick="on">後（卓）</button>
+        </div>
+        <p class="demopanel__hint">照明・織り目・ベッティングライン・レールの有無を見比べる</p>
       </div>
 
       <div class="demopanel__group">
