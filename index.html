@@ -193,6 +193,10 @@
             <h2 class="h-3">賭場</h2>
             <p class="floor__credit">残り <b id="bet-left">3</b> 回 ／ <b id="pt">1,200</b> pt</p>
           </div>
+          <!-- ポーカーテーブルの面。sticky で画面に貼り付けるので、
+               札をスクロールしてもテーブルの照明と縁は動かない -->
+          <div class="floor__table" aria-hidden="true"></div>
+
           <ul class="floor__list" id="floor-list"><!-- JSで描画 --></ul>
         </section>
 

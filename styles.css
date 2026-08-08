@@ -38,6 +38,10 @@
 
   --line:1.5px solid var(--gold-dim);
 
+  /* 端末の表示領域の高さ（端末780px − タブバー56px）。
+     卓の背景は sticky + height:0 で貼り付けるため % が使えず、この値を基準にする */
+  --screen-h:724px;
+
   /* 賭札の角。丸めるのは賭場の中だけで、端末フレームや他画面は角0のまま。
      「角0」の原則から外すのはここだけなので、値はトークンに寄せておく */
   --card-radius:14px;  /* 札そのもの */
@@ -302,11 +306,55 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* ============================================================
    賭場 — カジノテーブル
    ============================================================ */
-.view--floor{ background:var(--felt); }
-.view--floor::before{      /* フェルトの起毛 */
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background-image:radial-gradient(rgba(0,0,0,.28) 1px, transparent 1px);
-  background-size:3px 3px;
+.view--floor{ background:var(--felt-deep); }
+
+/* ------------------------------------------------------------
+   ポーカーテーブルの面
+   色は足さず、明暗とテクスチャだけで「ラシャ張りの卓」に見せる。
+   sticky + height:0 で画面へ貼り付けるので、レイアウトを一切押さずに
+   札だけがテーブルの上を流れていく。
+   ------------------------------------------------------------ */
+.floor__table{
+  position:sticky; top:0; height:0; z-index:0;
+  pointer-events:none;
+}
+.floor__table::before{
+  content:""; position:absolute; left:0; right:0; top:0; height:var(--screen-h);
+
+  background:
+    /* 1) 卓上の照明。中央やや上に落ちる */
+    radial-gradient(ellipse 76% 40% at 50% 30%, rgba(255,255,255,.09), transparent 70%),
+    /* 2) 周辺減光。卓の丸みと、縁へ向かう暗がり */
+    radial-gradient(ellipse 96% 66% at 50% 38%, transparent 52%, rgba(0,0,0,.5) 100%),
+    /* 3) ラシャの織り目。斜め2方向で布目を作る */
+    repeating-linear-gradient(45deg,  rgba(0,0,0,.05) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.028) 0 1px, transparent 1px 3px),
+    var(--felt);
+}
+/* ベッティングライン。卓に引かれた金の弧。
+   左右へはみ出させると端末の横スクロールを作ってしまうので、
+   幅は画面内に収めたまま border-radius だけで曲率を作る */
+.floor__table::after{
+  content:""; position:absolute; left:0; right:0;
+  top:calc(var(--screen-h) * .10); height:calc(var(--screen-h) * .78);
+  border-top:1.5px solid rgba(201,162,39,.22);
+  border-radius:50% 50% 0 0 / 18% 18% 0 0;
+}
+
+/* 卓の縁（レール）。左右の端だけ暗く落として、金のステッチを1本入れる */
+.view--floor::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,.55) 0, rgba(0,0,0,.18) 7px, transparent 10px),
+    linear-gradient(270deg,
+      rgba(0,0,0,.55) 0, rgba(0,0,0,.18) 7px, transparent 10px);
+}
+.view--floor::after{
+  content:""; position:absolute; top:0; bottom:0; left:8px; right:8px;
+  pointer-events:none; z-index:0;
+  border-left:1px solid rgba(201,162,39,.16);
+  border-right:1px solid rgba(201,162,39,.16);
 }
 
 .floor__head{
@@ -385,7 +433,8 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* --- 賭札：1件を1枚の札に ---
    角丸＋金枠＋左端のミシン目で「券」に見せる。
    角を丸めるのはこの札まわりだけで、端末フレームや他画面は角0のまま。 */
-[data-skin="card"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
+/* 上端を少し空けて、札の手前に卓の面とベッティングラインを覗かせる */
+[data-skin="card"] .floor__list{ padding:var(--s-4) var(--s-3) var(--s-5); }
 
 [data-skin="card"] .floor__item{
   position:relative; z-index:0;   /* ::after を -1 に置くための文脈 */
@@ -430,7 +479,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ------------------------------------------------------------ */
 
 /* --- 標準：余白と文字を1段階詰める --- */
-[data-density="normal"] .floor__list{ padding:var(--s-2) var(--s-3) var(--s-3); }
+[data-density="normal"] .floor__list{ padding:var(--s-3) var(--s-3) var(--s-4); }
 [data-density="normal"] .floor__item{
   /* 札が小さくなるぶん角丸も浅くする。--card-radius は ::after のミシン目の
      上下の逃げにも使われているので、ここを変えれば両方が追随する */
@@ -450,7 +499,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="normal"] .floor__thread{ padding:var(--s-1) var(--s-2); }
 
 /* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
-[data-density="tight"] .floor__list{ padding:var(--s-2); }
+[data-density="tight"] .floor__list{ padding:var(--s-3) var(--s-2) var(--s-3); }
 [data-density="tight"] .floor__item{
   --card-radius:9px;
   --ctrl-radius:5px;
@@ -629,6 +678,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 
 /* ---------- 狭幅：縮小でなく再配置 ---------- */
 @media (max-width:900px){
+  :root{ --screen-h:664px; }   /* 端末が720pxに縮むので卓の基準も合わせる */
   .stage{ padding:var(--s-4) var(--s-3) var(--s-7); }
   .stage__body{ grid-template-columns:1fr; }
   .phone{ width:100%; max-width:390px; height:720px; margin:0 auto; }
