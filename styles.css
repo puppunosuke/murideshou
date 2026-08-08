@@ -368,10 +368,11 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 
 /* 最新の日誌を1行だけ。開かなくても場の空気が伝わるように。
    長文でも札の高さが動かないよう、必ず1行で切る */
+/* 左に罫線を引くと、札のミシン目と平行な二重線に見えてしまう。
+   「券の中に箱を積み重ねない」方針どおり、区切りはDayバッジだけで足りる */
 .floor__latest{
   display:flex; align-items:baseline; gap:var(--s-2);
   font-size:12px; color:var(--dust); margin:var(--s-2) 0 0;
-  border-left:2px solid var(--gold-dim); padding-left:var(--s-2);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .floor__latest-day{ font-family:"Inter"; font-size:11px; color:var(--gold); flex:0 0 auto; }
@@ -431,7 +432,11 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* --- 標準：余白と文字を1段階詰める --- */
 [data-density="normal"] .floor__list{ padding:var(--s-2) var(--s-3) var(--s-3); }
 [data-density="normal"] .floor__item{
-  --notch:11px;
+  /* 札が小さくなるぶん角丸も浅くする。--card-radius は ::after のミシン目の
+     上下の逃げにも使われているので、ここを変えれば両方が追随する */
+  --card-radius:11px;
+  --ctrl-radius:6px;
+  --bar-radius:2px;
   padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);
   margin-bottom:var(--s-2);
 }
@@ -447,7 +452,9 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
 [data-density="tight"] .floor__list{ padding:var(--s-2); }
 [data-density="tight"] .floor__item{
-  --notch:8px;
+  --card-radius:9px;
+  --ctrl-radius:5px;
+  --bar-radius:2px;
   padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);
   margin-bottom:var(--s-2);
 }
