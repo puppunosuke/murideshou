@@ -407,34 +407,24 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 
 /* --- 卓上の小物：静物ではなく「誰かがいま遊んでいる」痕跡 ---
-   札の操作より必ず奥へ置く。上端の一組は固定、以降はカード間の隙間へ
-   JSが件数に応じて複製する。 */
+   札の操作より必ず奥へ置く。直下の4要素は複製元なので隠し、
+   JSが卓全体へばらばらに複製する。 */
 .table__props{ position:absolute; inset:0; }
 .table-prop{ position:absolute; }
+.table__props > .table-prop{ visibility:hidden; }
 
-/* 各カードの背後へ自動配置する小物。--scatter-y は実際の札の位置からJSが入れる。
-   小物のための余白は作らず、左右の縁と既存のカード間隔から一部だけ覗かせる。 */
+/* 卓全体へ自動配置する小物。座標・回転・縮尺はJSが固定乱数で入れる。
+   カード境界や端へ整列させず、隠れ方も含めて散らばりにする。 */
 .table-scatter{
-  position:absolute; left:0; right:0; top:var(--scatter-y); height:64px;
+  position:absolute; left:var(--scatter-x); top:var(--scatter-y);
+  width:104px; height:88px; opacity:.9;
 }
-.table-scatter .table-prop--chips{
-  top:3px; transform:scale(.62) rotate(-5deg);
+.table-scatter .table-prop{
+  visibility:visible; left:0; right:auto; top:0;
+  transform:scale(var(--scatter-scale)) rotate(var(--scatter-rotate));
+  transform-origin:center;
 }
-.table-scatter .table-prop--cash{
-  top:8px; transform:scale(.58) rotate(6deg);
-}
-.table-scatter .table-prop--cards{
-  top:0; transform:scale(.65) rotate(3deg);
-}
-.table-scatter .table-prop--pawn{
-  top:10px; transform:scale(.82) rotate(-7deg);
-}
-.table-scatter--left .table-prop{ left:-16px; right:auto; transform-origin:left top; }
-.table-scatter--right .table-prop{ left:auto; right:-16px; transform-origin:right top; }
-.table-scatter--left .table-prop--pawn{ left:-3px; }
-.table-scatter--right .table-prop--pawn{ right:-3px; }
-.table-scatter--left .table-prop--cash{ left:-24px; }
-.table-scatter--right .table-prop--cash{ right:-24px; }
+.table-scatter .table-prop--pawn{ left:30px; top:14px; }
 
 /* 左奥に崩れたチップ。きれいな等間隔にせず、手で寄せた偏りを残す */
 .table-prop--chips{ left:18px; top:72px; width:80px; height:66px; }

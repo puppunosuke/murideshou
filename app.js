@@ -476,9 +476,8 @@ function streakBadge(n){
   return `<span class="streak">${n}週連続</span>`;
 }
 
-// 目標カードの背後へ卓上小物を散らす。
-// 小物のために余白を増やさず、カードの縁から一部だけ覗かせる。
-// CSSの高さを推測せず、描画済みカードの実座標を使うので密度3段階すべてに追随する。
+// 卓全体へ小物を散らす。カード境界や画面端を基準にせず、卓の連続座標へ配置する。
+// 固定seedの疑似乱数なので、再描画のたびに小物が飛び回ることはない。
 function renderTableProps(){
   const props = $('.table__props');
   const inner = $('.table__inner');
@@ -494,23 +493,38 @@ function renderTableProps(){
     cash:  props.querySelector(':scope > .table-prop--cash'),
     pawn:  props.querySelector(':scope > .table-prop--pawn'),
   };
-  const innerTop = inner.getBoundingClientRect().top;
-
   const kinds = ['chips', 'cards', 'cash', 'pawn'];
+  const height = inner.offsetHeight;
+  const width = inner.clientWidth;
+  // 前景の背後へ隠れるぶんを見込み、卓面積125pxごとに約1個置く。
+  const count = Math.max(12, Math.round(height / 125));
 
-  cards.forEach((card, index) => {
-    // 先頭の札には、卓の奥にある固定小物がすでに見えている。
-    if (index === 0) return;
+  // LCG。カード数と卓高が同じなら必ず同じ景色になる。
+  let seed = (0x6D2B79F5 ^ cards.length * 2654435761 ^ height) >>> 0;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const kindOffset = Math.floor(random() * kinds.length);
 
+  for (let index = 0; index < count; index++){
     const scatter = document.createElement('div');
-    const side = index % 2 === 0 ? 'left' : 'right';
-    const kind = kinds[(index - 1) % kinds.length];
-    scatter.className = `table-scatter table-scatter--${side} table-scatter--${kind}`;
-    // カード上端へ差し込む。最終カードの小物も終端レールへ落ちず、途中の景色として見える。
-    scatter.style.setProperty('--scatter-y', `${Math.round(card.getBoundingClientRect().top - innerTop - 22)}px`);
+    // 種類は均等に巡回し、位置・回転・縮尺だけを乱す。seedによる品目の偏りを防ぐ。
+    const kind = kinds[(index + kindOffset) % kinds.length];
+    const bandY = (index + random() * .82) / count; // 縦だけは偏りすぎないよう帯をずらす
+    const x = -18 + random() * Math.max(1, width - 58);
+    const y = 38 + bandY * Math.max(1, height - 126);
+    const scale = .88 + random() * .32;
+    const rotate = -28 + random() * 56;
+
+    scatter.className = `table-scatter table-scatter--${kind}`;
+    scatter.style.setProperty('--scatter-x', `${Math.round(x)}px`);
+    scatter.style.setProperty('--scatter-y', `${Math.round(y)}px`);
+    scatter.style.setProperty('--scatter-scale', scale.toFixed(2));
+    scatter.style.setProperty('--scatter-rotate', `${Math.round(rotate)}deg`);
     scatter.append(source[kind].cloneNode(true));
     props.append(scatter);
-  });
+  }
 }
 
 function renderFloor(){
