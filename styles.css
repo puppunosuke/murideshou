@@ -190,8 +190,16 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ============================================================ */
 .view--odds.is-on{ display:flex; }
 .view--odds{ background:#000; }
-.view--odds .view__pad{ flex:1; display:flex; flex-direction:column; padding-top:var(--s-5); }
-.view--odds #odds-judge{ margin-top:auto; }
+.view--odds .view__pad{ flex:1; display:flex; flex-direction:column; padding-top:var(--s-4); }
+/* 以前は #odds-judge を margin-top:auto で下端へ沈めていたが、
+   日誌が下に付いたことで投稿ボタンが画面外へ押し出されていた。
+   1日1回しか書けない機能が見えないのは致命的なので、下寄せをやめる。
+
+   ふだんは 日誌 → 証拠を出す の順（毎日使う日誌を優先）。
+   締切が来たら証拠提出が最優先になるので、order で順序を入れ替える */
+.view--odds .journal{ order:1; }
+.view--odds #odds-judge{ order:2; }
+.view--odds.is-due #odds-judge{ order:0; }
 
 /* 掲示板の上端。LIVEランプと銘板 */
 .odds__top{
@@ -210,7 +218,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
 
-.odds__label{ font-size:16px; font-weight:700; margin:0 0 var(--s-5); color:var(--chalk); }
+.odds__label{ font-size:16px; font-weight:700; margin:0 0 var(--s-4); color:var(--chalk); }
 
 .odds__figure{ display:flex; align-items:baseline; gap:var(--s-2); }
 .odds__num{
@@ -247,11 +255,11 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .odds__time{ font-size:14px; color:var(--dust); margin:var(--s-3) 0 0; }
 .odds__time b{ color:var(--amber); font-family:"Inter"; }
 
-.rule{ border:0; border-top:1.5px solid #2A2A2C; margin:var(--s-5) 0 var(--s-3); }
+.rule{ border:0; border-top:1.5px solid #2A2A2C; margin:var(--s-4) 0 var(--s-2); }
 .odds__whisper{ font-size:12px; color:var(--dust); margin:0; }
 
 /* ---------- 日誌（自分の1日1回コメント） ---------- */
-.journal{ margin-top:var(--s-6); border-top:1.5px solid #2A2A2C; padding-top:var(--s-4); }
+.journal{ margin-top:var(--s-5); border-top:1.5px solid #2A2A2C; padding-top:var(--s-3); }
 .journal__head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:var(--s-2); }
 .journal__cap{ font-size:12px; letter-spacing:0.12em; color:var(--gold); }
 .journal__day{ font-family:"Inter"; font-size:12px; color:var(--dust); }
@@ -269,7 +277,16 @@ select option{ background:#0A0A0B; color:var(--chalk); }
   padding:var(--s-2) var(--s-3); margin:0 0 var(--s-3);
 }
 
-.journal__log{ list-style:none; margin:var(--s-4) 0 0; padding:0; }
+/* 過去ログは畳んでおく。日数が増えても投稿欄が下へ押し出されない */
+.journal__past{ margin-top:var(--s-3); }
+.journal__past[hidden]{ display:none; }
+.journal__past summary{
+  font-size:12px; color:var(--dust); cursor:pointer;
+  display:flex; align-items:center; gap:var(--s-2); min-height:24px;
+}
+.journal__past summary b{ font-family:"Inter"; color:var(--gold); }
+
+.journal__log{ list-style:none; margin:var(--s-2) 0 0; padding:0; }
 .journal__entry{ border-top:1.5px solid #2A2A2C; padding:var(--s-2) 0; }
 .journal__entry-day{ font-family:"Inter"; font-size:11px; color:var(--gold-dim); }
 .journal__entry-text{ font-size:14px; margin:var(--s-1) 0; color:var(--chalk); }
@@ -338,6 +355,16 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .floor__support{ height:6px; background:var(--lose); margin:0 0 var(--s-1); }
 .floor__support i{ display:block; height:100%; background:var(--win); }
 
+/* 最新の日誌を1行だけ。開かなくても場の空気が伝わるように。
+   長文でも札の高さが動かないよう、必ず1行で切る */
+.floor__latest{
+  display:flex; align-items:baseline; gap:var(--s-2);
+  font-size:12px; color:var(--dust); margin:var(--s-2) 0 0;
+  border-left:2px solid var(--gold-dim); padding-left:var(--s-2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.floor__latest-day{ font-family:"Inter"; font-size:11px; color:var(--gold); flex:0 0 auto; }
+
 /* ============================================================
    賭場の見た目：C案「賭札」を採用（#floor-view の data-skin="card"）
    比較用に並べていた他の3案（素／出走表／掲示板）は削除済み。
@@ -398,6 +425,53 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 [data-skin="card"] .floor__support{ display:block; margin-bottom:var(--s-2); }
 
+/* ------------------------------------------------------------
+   密度3案（#floor-view の data-density）
+   券のリッチさと一覧の一望性はトレードオフなので、3段階で比べられるようにする。
+   loose は上の既定値そのまま。normal / tight だけを上書きする。
+   ------------------------------------------------------------ */
+
+/* --- 標準：余白と文字を1段階詰める --- */
+[data-density="normal"] .floor__list{ padding:var(--s-2) var(--s-3) var(--s-3); }
+[data-density="normal"] .floor__item{
+  --notch:11px;
+  padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  margin-bottom:var(--s-2);
+}
+[data-density="normal"] .floor__item::after{ left:calc(var(--s-2) - 4px); }
+[data-density="normal"] .floor__text{ font-size:16px; margin-bottom:var(--s-1); }
+[data-density="normal"] .floor__no{ font-size:22px; top:var(--s-2); right:var(--s-2); }
+[data-density="normal"] .floor__support{ height:4px; margin-bottom:var(--s-1); }
+[data-density="normal"] .floor__meta{ margin-bottom:var(--s-1); }
+[data-density="normal"] .floor__acts{ padding-top:var(--s-2); }
+[data-density="normal"] .bet{ padding:var(--s-1) var(--s-2); }
+[data-density="normal"] .floor__thread{ padding:var(--s-1) var(--s-2); }
+
+/* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
+[data-density="tight"] .floor__list{ padding:var(--s-2); }
+[data-density="tight"] .floor__item{
+  --notch:8px;
+  padding:var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  margin-bottom:var(--s-2);
+}
+[data-density="tight"] .floor__item::after{ left:calc(var(--s-2) - 5px); }
+[data-density="tight"] .floor__who{ font-size:11px; margin-bottom:0; }
+[data-density="tight"] .floor__text{
+  font-size:15px; margin-bottom:var(--s-1); padding-right:var(--s-4);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+[data-density="tight"] .floor__no{ font-size:18px; top:var(--s-2); right:var(--s-2); }
+[data-density="tight"] .floor__support{ height:3px; margin-bottom:var(--s-1); }
+[data-density="tight"] .floor__meta{ font-size:11px; margin-bottom:var(--s-1); }
+[data-density="tight"] .floor__acts{ padding-top:var(--s-2); }
+[data-density="tight"] .bet{
+  flex-direction:row; justify-content:space-between; align-items:center;
+  gap:var(--s-1); padding:var(--s-1) var(--s-2); font-size:12px; white-space:nowrap;
+}
+[data-density="tight"] .bet .floor__odds{ font-size:14px; }
+[data-density="tight"] .floor__latest{ margin-top:var(--s-1); }
+[data-density="tight"] .floor__thread{ padding:var(--s-1); font-size:11px; margin-top:var(--s-1); }
+
 /* ---------- 証拠提出 ---------- */
 .dropzone{
   border:1.5px dashed var(--gold-dim); background:#0A0A0B;
@@ -435,7 +509,9 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 /* ---------- 装飾（カジノチップ） ---------- */
 .blob{ position:absolute; pointer-events:none; z-index:0; }
 .blob--empty{ position:static; width:132px; height:132px; }
-.blob--odds{ width:190px; height:190px; right:-96px; bottom:104px; opacity:.5; }
+/* 日誌が入ってオッズ画面が伸びたので、bottom基準だと入力欄の真後ろに来てしまう。
+   数字の高さに固定して、日誌へは絶対にかからないようにする */
+.blob--odds{ width:190px; height:190px; right:-96px; top:96px; opacity:.45; }
 .blob--result{ width:200px; height:200px; left:-80px; bottom:-48px; opacity:.6; }
 
 /* ---------- タブバー ---------- */
@@ -449,41 +525,55 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .tab.is-on{ color:var(--amber); text-shadow:0 0 12px rgba(255,177,0,.7); }
 
 /* ============================================================
-   スレッド（賭場カード1件の日誌）— dialog
-   一覧の直下へ詳細を積まない原則を守り、賭場一覧とは別面（dialog）に分離する
+   スレッド（賭場カード1件の日誌）— 端末内シート
+   一覧の直下へ詳細を積まない原則は守りつつ、<dialog>+showModal() が
+   top-layer に出て端末フレームの外へはみ出す問題を避けるため、
+   .phone の中に絶対配置したシートとして実装する
    ============================================================ */
-.thread-dialog{
-  width:min(390px, 92vw); max-height:80vh;
-  border:2px solid var(--gold); border-radius:0; padding:0;
-  background:var(--board); color:var(--chalk);
+.sheet{
+  position:absolute; inset:0; z-index:20;
+  background:rgba(0,0,0,.72);
+  display:flex; align-items:flex-end;
 }
-.thread-dialog::backdrop{ background:rgba(0,0,0,.72); }
+.sheet[hidden]{ display:none; }
 
-.thread-dialog__head{
+.sheet__panel{
+  width:100%; max-height:88%;
+  background:var(--board); border-top:2px solid var(--gold);
+  display:flex; flex-direction:column; min-height:0;
+  animation:sheetUp .22s ease-out;
+}
+@keyframes sheetUp{ from{ transform:translateY(16px); opacity:.4 } to{ transform:none; opacity:1 } }
+
+.sheet__head{
   display:flex; justify-content:space-between; align-items:flex-start;
-  gap:var(--s-3); padding:var(--s-4); border-bottom:1.5px solid var(--gold-dim);
-  position:sticky; top:0; background:var(--board);
+  gap:var(--s-3); padding:var(--s-3) var(--s-4);
+  border-bottom:1.5px solid var(--gold-dim); flex:0 0 auto;
 }
-.thread-dialog__who{ font-family:"Inter"; font-size:12px; color:var(--gold-dim); margin:0; }
-.thread-dialog__text{ font-size:16px; font-weight:700; margin:var(--s-1) 0 0; }
-.thread-dialog__close{
+.sheet__who{ font-family:"Inter"; font-size:12px; color:var(--gold-dim); margin:0; }
+.sheet__text{ font-size:16px; font-weight:700; margin:var(--s-1) 0 0; }
+.sheet__close{
   border:1.5px solid var(--gold-dim); background:transparent; color:var(--dust);
-  width:32px; height:32px; flex:0 0 auto; font-size:16px; line-height:1;
+  width:44px; height:44px; flex:0 0 auto; font-size:18px; line-height:1;
 }
-.thread-dialog__close:hover{ border-color:var(--gold); color:var(--gold); }
+.sheet__close:hover{ border-color:var(--gold); color:var(--gold); }
 
-.thread-dialog__list{ list-style:none; margin:0; padding:var(--s-2) var(--s-4) var(--s-4); overflow-y:auto; }
+.sheet__list{
+  list-style:none; margin:0; padding:var(--s-2) var(--s-4) var(--s-4);
+  overflow-y:auto; min-height:0;
+}
 .thread-item{ border-top:1.5px solid #2A2A2C; padding:var(--s-3) 0; }
 .thread-item:first-child{ border-top:0; }
 .thread-item__day{ font-family:"Inter"; font-size:11px; color:var(--gold-dim); margin:0; }
 .thread-item__text{ font-size:15px; margin:var(--s-1) 0 var(--s-2); color:var(--chalk); }
 .thread-empty{ font-size:12px; color:var(--dust); padding:var(--s-3) 0; }
 
-.thread-item__reactions{ display:flex; flex-wrap:wrap; gap:var(--s-1); }
+.thread-item__reactions{ display:flex; flex-wrap:wrap; gap:var(--s-2); }
+/* 賭場の主要操作なので、44px のタップ領域を確保する */
 .reaction{
   border:1.5px solid var(--gold-dim); background:transparent; color:var(--dust);
-  padding:var(--s-1) var(--s-2); font-size:12px;
-  display:flex; align-items:center; gap:var(--s-1);
+  padding:var(--s-2) var(--s-3); font-size:12px; min-height:44px;
+  display:flex; align-items:center; gap:var(--s-2);
 }
 .reaction b{ font-family:"Inter"; font-weight:700; color:inherit; }
 .reaction.is-picked{ background:var(--amber); border-color:var(--amber); color:#1A1405; }
@@ -502,6 +592,8 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 .dbtn:hover{ border-color:var(--gold); color:var(--gold); }
 .dbtn:active{ transform:translate(1px,1px); }
+.dbtn.is-on{ border-color:var(--amber); color:var(--amber); }
+.demopanel__hint{ font-size:12px; color:var(--dust); margin:var(--s-2) 0 0; }
 .demopanel__jump{ display:flex; flex-wrap:wrap; gap:var(--s-2); }
 .dbtn--s{ width:auto; flex:0 0 auto; padding:var(--s-1) var(--s-2); font-size:12px; margin:0; }
 
