@@ -370,7 +370,8 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 }
 /* 手前側（下）の縁。プレイヤーの座る側 */
 .table__rail--bottom{
-  top:auto; bottom:calc(var(--screen-h) * -.42);
+  /* 終端余白を増やさず縁を見せるため、弧だけを少し卓内へ持ち上げる */
+  top:auto; bottom:calc(var(--screen-h) * -.32);
   background:
     radial-gradient(ellipse 60% 40% at 50% 8%, rgba(201,162,39,.14), transparent 60%),
     linear-gradient(0deg, #0B0A07 0%, #1A1509 62%, #241C0C 100%);
@@ -411,26 +412,29 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 .table__props{ position:absolute; inset:0; }
 .table-prop{ position:absolute; }
 
-/* カード間へ自動配置する小物帯。--scatter-y は実際の札の位置からJSが入れる */
+/* 各カードの背後へ自動配置する小物。--scatter-y は実際の札の位置からJSが入れる。
+   小物のための余白は作らず、左右の縁と既存のカード間隔から一部だけ覗かせる。 */
 .table-scatter{
-  position:absolute; left:0; right:0; top:var(--scatter-y); height:76px;
+  position:absolute; left:0; right:0; top:var(--scatter-y); height:64px;
 }
 .table-scatter .table-prop--chips{
-  left:22px; top:7px; transform:scale(.78) rotate(-4deg); transform-origin:left top;
+  top:3px; transform:scale(.62) rotate(-5deg);
 }
 .table-scatter .table-prop--cash{
-  left:86px; top:20px; transform:scale(.76) rotate(7deg); transform-origin:left top;
+  top:8px; transform:scale(.58) rotate(6deg);
 }
 .table-scatter .table-prop--cards{
-  right:20px; top:2px; transform:scale(.82) rotate(2deg); transform-origin:right top;
+  top:0; transform:scale(.65) rotate(3deg);
 }
 .table-scatter .table-prop--pawn{
-  right:104px; top:16px; transform:scale(.86) rotate(-8deg); transform-origin:right top;
+  top:10px; transform:scale(.82) rotate(-7deg);
 }
-.table-scatter--right .table-prop--chips{ left:auto; right:18px; transform:scale(.74) rotate(5deg); transform-origin:right top; }
-.table-scatter--right .table-prop--cash{ left:auto; right:78px; transform:scale(.72) rotate(-5deg); transform-origin:right top; }
-.table-scatter--left .table-prop--cards{ right:auto; left:20px; transform:scale(.78) rotate(-3deg); transform-origin:left top; }
-.table-scatter--left .table-prop--pawn{ right:auto; left:100px; transform:scale(.82) rotate(7deg); transform-origin:left top; }
+.table-scatter--left .table-prop{ left:-16px; right:auto; transform-origin:left top; }
+.table-scatter--right .table-prop{ left:auto; right:-16px; transform-origin:right top; }
+.table-scatter--left .table-prop--pawn{ left:-3px; }
+.table-scatter--right .table-prop--pawn{ right:-3px; }
+.table-scatter--left .table-prop--cash{ left:-24px; }
+.table-scatter--right .table-prop--cash{ right:-24px; }
 
 /* 左奥に崩れたチップ。きれいな等間隔にせず、手で寄せた偏りを残す */
 .table-prop--chips{ left:18px; top:72px; width:80px; height:66px; }
@@ -576,7 +580,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    角を丸めるのはこの札まわりだけで、端末フレームや他画面は角0のまま。 */
 /* 上端に卓の帯を確保する。ここにレール・ハウス刻印・ベッティングラインが出る。
    左右も少し広げて、札の脇からラシャを覗かせる */
-[data-skin="card"] .floor__list{ padding:180px var(--s-4) 128px; }
+[data-skin="card"] .floor__list{ padding:150px var(--s-4) var(--s-6); }
 
 [data-skin="card"] .floor__item{
   position:relative; z-index:0;   /* ::after を -1 に置くための文脈 */
@@ -621,7 +625,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
    ------------------------------------------------------------ */
 
 /* --- 標準：余白と文字を1段階詰める --- */
-[data-density="normal"] .floor__list{ padding:164px var(--s-3) 112px; }
+[data-density="normal"] .floor__list{ padding:132px var(--s-3) var(--s-5); }
 [data-density="normal"] .floor__item{
   /* 札が小さくなるぶん角丸も浅くする。--card-radius は ::after のミシン目の
      上下の逃げにも使われているので、ここを変えれば両方が追随する */
@@ -641,7 +645,7 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="normal"] .floor__thread{ padding:var(--s-1) var(--s-2); }
 
 /* --- 詰める：面取りを浅くし、宣言文も1行に切る --- */
-[data-density="tight"] .floor__list{ padding:148px var(--s-2) 96px; }
+[data-density="tight"] .floor__list{ padding:116px var(--s-2) var(--s-4); }
 [data-density="tight"] .floor__item{
   --card-radius:9px;
   --ctrl-radius:5px;
@@ -666,12 +670,6 @@ select option{ background:#0A0A0B; color:var(--chalk); }
 [data-density="tight"] .bet .floor__odds{ font-size:14px; }
 [data-density="tight"] .floor__latest{ margin-top:var(--s-1); }
 [data-density="tight"] .floor__thread{ padding:var(--s-1); font-size:11px; margin-top:var(--s-1); }
-
-/* 奇数枚目の札の後ろへ卓上の抜けを作る。
-   カード数が増えればこの隙間も増え、JSが同じ数だけ小物帯を置く。 */
-[data-skin="card"] .floor__item:nth-child(odd):not(:last-child){ margin-bottom:96px; }
-[data-density="normal"] .floor__item:nth-child(odd):not(:last-child){ margin-bottom:80px; }
-[data-density="tight"] .floor__item:nth-child(odd):not(:last-child){ margin-bottom:64px; }
 
 /* 連続達成のバッジ。0週なら出さない＝無いことをわざわざ責めない */
 .streak{

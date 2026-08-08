@@ -476,7 +476,8 @@ function streakBadge(n){
   return `<span class="streak">${n}週連続</span>`;
 }
 
-// 目標カードの間へ卓上小物を散らす。
+// 目標カードの背後へ卓上小物を散らす。
+// 小物のために余白を増やさず、カードの縁から一部だけ覗かせる。
 // CSSの高さを推測せず、描画済みカードの実座標を使うので密度3段階すべてに追随する。
 function renderTableProps(){
   const props = $('.table__props');
@@ -495,19 +496,19 @@ function renderTableProps(){
   };
   const innerTop = inner.getBoundingClientRect().top;
 
+  const kinds = ['chips', 'cards', 'cash', 'pawn'];
+
   cards.forEach((card, index) => {
-    // 1・3・5枚目…の後ろだけを小物帯にする。最後の札の後ろには置かない。
-    if (index % 2 !== 0 || index === cards.length - 1) return;
+    // 先頭の札には、卓の奥にある固定小物がすでに見えている。
+    if (index === 0) return;
 
     const scatter = document.createElement('div');
-    const pairIndex = Math.floor(index / 2);
-    const leftPair = pairIndex % 2 !== 0;
-    scatter.className = `table-scatter ${leftPair ? 'table-scatter--left' : 'table-scatter--right'}`;
-    scatter.style.setProperty('--scatter-y', `${Math.round(card.getBoundingClientRect().bottom - innerTop + 10)}px`);
-
-    // チップ＋紙幣、カード＋ポーンを交互に置き、同じ模様の反復に見せない。
-    const kinds = leftPair ? ['cards', 'pawn'] : ['chips', 'cash'];
-    kinds.forEach(kind => scatter.append(source[kind].cloneNode(true)));
+    const side = index % 2 === 0 ? 'left' : 'right';
+    const kind = kinds[(index - 1) % kinds.length];
+    scatter.className = `table-scatter table-scatter--${side} table-scatter--${kind}`;
+    // カード上端へ差し込む。最終カードの小物も終端レールへ落ちず、途中の景色として見える。
+    scatter.style.setProperty('--scatter-y', `${Math.round(card.getBoundingClientRect().top - innerTop - 22)}px`);
+    scatter.append(source[kind].cloneNode(true));
     props.append(scatter);
   });
 }
