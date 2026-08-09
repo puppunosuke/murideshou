@@ -1,0 +1,1 @@
+import{i as e,n as t,r as n,t as r}from"./styles-D5sLeoc_.js";var i=e(),a=n(),o=t(),s=document.querySelector(`#app`);if(s instanceof HTMLElement)(0,a.createRoot)(s).render((0,o.jsx)(i.StrictMode,{children:(0,o.jsx)(r,{})}));else throw Error(`#app container is missing`);
